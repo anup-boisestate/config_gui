@@ -1,5 +1,6 @@
 #!/bin/python3
 import sys
+#from Gin3dGUI import Gin3dGUI
 
 try:
     from gi.repository import Gtk
@@ -23,6 +24,13 @@ class Gin3dReadConfig:
             self.parse_file(filename)
         except FileExistsError as err:
             print(err)
+
+        gladefile = "../GIN3D_ConfigGUI.glade"
+        g3dGUI = Gin3dGUI(gladefile, self.cnfg)
+        g3dGUI.show_gui()
+
+        gtk = g3dGUI.get_gtk()
+        gtk.main()
 
     def parse_file(self, filename):
 

@@ -21,7 +21,7 @@ class Gin3dGUI:
         # changing background color
         # self.window.modify_bg(0, WHITE) # Main Window
 
-    def __init__(self, gladefile):
+    def __init__(self, gladefile, cnfg=None):
 
         self.builder = Gtk.Builder()
         self.builder.add_from_file(gladefile)
@@ -44,6 +44,9 @@ class Gin3dGUI:
         notebook.get_nth_page(7).hide()
 
         self.builder.get_object("simParam_forcing_cmfr_box").hide()
+
+        if cnfg is not None:
+            self.fill_data(cnfg)
 
     def show_gui(self):
         self.window.show()
@@ -789,3 +792,13 @@ class Gin3dGUI:
                 obj.set_text("")
         except:
             obj.set_text("")
+
+
+
+    ######################################################
+    ######################################################
+    def fill_data(self, cnfg):
+        grid = cnfg['Grid'].split(' ')
+        self.builder.get_object("domain_lx").set_text(grid[0])
+        self.builder.get_object("domain_ly").set_text(grid[1])
+        self.builder.get_object("domain_lz").set_text(grid[2])
