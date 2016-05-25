@@ -41,8 +41,12 @@ class GIN3DConfigWin:
             for line in fp:
                 line_number += 1
                 l = line.strip().replace('\t', '')
-                if l.startswith('#<'):
+                if l.startswith('#<Same as Inlet Profile>'):
                     cnfg['IC_InletProfile'] = 'True'
+                elif l.startswith('#<TrackCoordFile>'):
+                    cnfg['TrackCoordFile'] = l.replace('#<TrackCoordFile>').strip()
+                elif l.startswith('#<IBFiles>'):
+                    cnfg['IBFiles'] = l.replace('#<IBFiles>').strip()
                 elif not (l.startswith('#') or '' == l):
                     split = l.split(' ', 1)
                     key = split[0]
@@ -88,7 +92,7 @@ class GIN3DConfigWin:
                 return val_list[0] if len(val_list) == 1 else val_list
             return val
         except KeyError as err:
-            #log("'" + key + "' not found.", 'd')
+            # log("'" + key + "' not found.", 'd')
             return None
 
     def apply_cfg(self):
@@ -120,7 +124,6 @@ class GIN3DConfigWin:
             if reference_length is not None:
                 self.setVal('refLength', reference_length)
         except Exception as err:
-            print(err)
             log(err, 'e')
 
         # Laminar/Kinematic Viscosity
@@ -149,6 +152,7 @@ class GIN3DConfigWin:
         except Exception as err:
             log(err, 'e')
             turbulence = False
+
         self.setVal('simParam_switch_turbulence', turbulence)
 
         # Temperature
@@ -283,10 +287,9 @@ class GIN3DConfigWin:
                 self.setVal('inletProfile_switch_variable', True)
                 # Caution: the order of the values matter
                 rb_inletProfile_id = ['roughWall', 'smoothWall', 'powerLaw', 'parabolic', 'dns']
-                self.setVal('rb_inletProfile_'+rb_inletProfile_id[inlet_values.index(variable_profile)], None)
+                self.setVal('rb_inletProfile_' + rb_inletProfile_id[inlet_values.index(variable_profile)], None)
             except Exception as err:
                 log(err, 'e')
-
 
         # Turbulent Inlet for LES
         try:
@@ -359,24 +362,6 @@ class GIN3DConfigWin:
                     else:
                         self.setVal('fsp_rb_momentum_hybrid', None)
                         self.setVal('fsp_text_momentum_hybrid', advection_scheme_momentum)
-            except Exception as err:
-                log(err, 'e')
-
-            # Temperature
-            try:
-                advection_scheme_temperature = self.cfgVal('TemperatureAdvectionScheme')
-                if advection_scheme_temperature is not None:
-                    if advection_scheme_temperature == '0.00':
-                        self.setVal('fsp_rb_temperature_cds', None)
-                    elif advection_scheme_temperature == '1.00':
-                        self.setVal('fsp_rb_temperature_fou', None)
-                    elif advection_scheme_temperature == '-1.00':
-                        self.setVal('fsp_rb_temperature_quick', None)
-                    elif advection_scheme_temperature == '':
-                        self.setVal('fsp_rb_temperature_kappa', None)
-                    else:
-                        self.setVal('fsp_rb_temperature_hybrid', None)
-                        self.setVal('fsp_text_temperature_hybrid', advection_scheme_temperature)
             except Exception as err:
                 log(err, 'e')
 
@@ -487,8 +472,6 @@ class GIN3DConfigWin:
                 self.setVal('so_cb_outputVTK_c', 'c' in output_variables_vtk)
                 self.setVal('so_cb_outputVTK_i', 'i' in output_variables_vtk)
 
-
-
             # Raw Data
             # File Formats
             if outputFormat is not None:
@@ -567,7 +550,7 @@ class GIN3DConfigWin:
                 if matrix_data.lower() == 'u':
                     self.setVal('so_rb_screenDump_u', None)
                 elif matrix_data.lower() == 'v':
-                        self.setVal('so_rb_screenDump_v', None)
+                    self.setVal('so_rb_screenDump_v', None)
                 elif matrix_data.lower() == 'w':
                     self.setVal('so_rb_screenDump_w', None)
                 elif matrix_data.lower() == 'p':
@@ -576,6 +559,15 @@ class GIN3DConfigWin:
                     self.setVal('so_rb_screenDump_temperature', None)
 
             # Sampling
+            # Read the coordinate file (*.csv)
+            try:
+                self.setVal('so_file_coordFile', self.cnfg['TrackCoordFile'])
+            except:
+                pass
+
+            # Sampling Frequency
+            # Physical Time - Interval
+            self.setVal('so_text_physicalTime_interval', self.cnfg['TrackInterval'])
 
             # Collect Statistics
             try:
@@ -638,29 +630,135 @@ class GIN3DConfigWin:
             if temperature:
                 face_list = ['West', 'East', 'South', 'North', 'Bottom', 'Top']
                 for face in face_list:
-                    val = self.cfgVal('Temp_'+face)
+                    val = self.cfgVal('Temp_' + face)
                     try:
                         if isinstance(val, list):
-                            self.setVal('temp_'+face.lower()+'_face', val[0])
+                            self.setVal('temp_' + face.lower() + '_face', val[0])
                             self.setVal('temp_text_' + face.lower() + 'Face', val[1])
                         else:
                             self.setVal('temp_' + face.lower() + '_face', val)
                     except Exception as er:
                         log(er, 'e')
 
+                # Advection Scheme Temperature
+                try:
+                    advection_scheme_temperature = self.cfgVal('TemperatureAdvectionScheme')
+                    if advection_scheme_temperature is not None:
+                        if advection_scheme_temperature == '0.00':
+                            self.setVal('fsp_rb_temperature_cds', None)
+                        elif advection_scheme_temperature == '1.00':
+                            self.setVal('fsp_rb_temperature_fou', None)
+                        elif advection_scheme_temperature == '-1.00':
+                            self.setVal('fsp_rb_temperature_quick', None)
+                        elif advection_scheme_temperature == '':
+                            self.setVal('fsp_rb_temperature_kappa', None)
+                        else:
+                            self.setVal('fsp_rb_temperature_hybrid', None)
+                            self.setVal('fsp_text_temperature_hybrid', advection_scheme_temperature)
+                except Exception as err:
+                    log(err, 'e')
+
                 # Model Parameters
                 # Thermal expansion coefficient
                 self.setVal('temp_text_thermalExpansionCoefficient', self.cfgVal('Beta'))
                 # Thermal diffusivity
                 self.setVal('temp_text_thermalDiffusivity', self.cfgVal('Gamma'))
+
                 # Prandtl number
+                self.setVal('temp_text_prandtlNumber', self.cfgVal('TurbulentPrandtl'))
+
                 # Reference temperature
+                self.setVal('temp_text_refTemperature', self.cfgVal('Temp_Infinity'))
+
                 # Gravity
+                gravity = self.cfgVal('Gravity')
+                if gravity is not None:
+                    try:
+                        self.setVal('temp_text_gravity_x', gravity[0])
+                        self.setVal('temp_text_gravity_y', gravity[1])
+                        self.setVal('temp_text_gravity_z', gravity[2])
+                    except:
+                        log(err, 'e')
+
                 # Source magnitude
-                self.setVal('temp_text_soruceMagnitude', self.cfgVal('Source_PHI'))
+                self.setVal('temp_text_sourceMagnitude', self.cfgVal('Source_PHI'))
         except Exception as err:
             log(err, 'e')
 
+        # -------- Turbulence Model Parameters ----
+        try:
+            if turbulence:
+                turbulenceModel = self.cfgVal('TurbulenceModel')
+                if turbulenceModel is not None:
+                    if turbulenceModel == 'Smagorinsky':
+                        self.setVal('tm_rb_originalSmagorinsky', True)
+                    elif turbulenceModel == 'LagDynamic':
+                        self.setVal('tm_rb_lagrangianDynamicSmagorinsky', True)
+                    elif turbulenceModel == 'SmagRANS':
+                        self.setVal('tm_rb_prandtlSmagorinsky', True)
+                    elif turbulenceModel == 'LagDynRANS':
+                        self.setVal('tm_rb_prandtlLagrangianDynamicSmagorinsky', True)
+
+                # Smagorinsly Coefficient
+                self.setVal('tm_text_smagorinskyCoefficient', self.cfgVal('TurbCS'))
+
+                # RANS-LES Blending Height
+                self.setVal('tm_text_blendingHeight', self.cfgVal('TransitionHeight'))
+
+                # Distance Field
+                distanceField = self.cfgVal('DistanceField')
+                if distanceField is not None:
+                    if distanceField == 'TPC_X_WallNormal':
+                        self.setVal('geom_list_distanceField', '1')
+                        self.setVal('geom_rb_channel_x', True)
+                    elif distanceField == 'TPC_Y_WallNormal':
+                        self.setVal('geom_list_distanceField', '1')
+                        self.setVal('geom_rb_channel_y', True)
+                    elif distanceField == 'TPC_Z_WallNormal':
+                        self.setVal('geom_list_distanceField', '1')
+                        self.setVal('geom_rb_channel_z', True)
+                    else:
+                        self.setVal('geom_list_distanceField', '0')
+                        self.setVal('geom_file_distanceField', distanceField)
+
+        except Exception as err:
+            log(err, 'e')
+
+        # -------- Geometry Parameters ----
+        try:
+            if solid_geometry:
+
+
+
+                # IB Reconstruction Scheme
+                ibReconstruction = self.cfgVal('IBReconstruction')
+                if ibReconstruction is not None:
+                    if ibReconstruction == 'Linear':
+                        self.setVal('geom_rb_ib_linear', True)
+                    elif ibReconstruction == 'RoughLogLaw':
+                        self.setVal('geom_rb_ib_roughLogLaw', True)
+                        self.setVal('geom_text_roughness', self.cfgVal('Roughness'))
+                    elif ibReconstruction == 'OneSevenths':
+                        self.setVal('geom_rb_ib_powerLaw', True)
+
+                if not turbulence:
+                    # Distance Field
+                    distanceField = self.cfgVal('DistanceField')
+                    if distanceField is not None:
+                        if distanceField == 'TPC_X_WallNormal':
+                            self.setVal('tm_list_distanceField', '1')
+                            self.setVal('tm_rb_channel_x', True)
+                        elif distanceField == 'TPC_Y_WallNormal':
+                            self.setVal('tm_list_distanceField', '1')
+                            self.setVal('tm_rb_channel_y', True)
+                        elif distanceField == 'TPC_Z_WallNormal':
+                            self.setVal('tm_list_distanceField', '1')
+                            self.setVal('tm_rb_channel_z', True)
+                        else:
+                            self.setVal('tm_list_distanceField', '0')
+                            self.setVal('tm_file_distanceField', distanceField)
+        except Exception as err:
+            log(err, 'e')
         return
 
     def setVal(self, obj_id, val):

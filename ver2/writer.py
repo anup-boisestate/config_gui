@@ -1,8 +1,9 @@
 import gi
+import re
+from utilities import *
 from gi.repository import Gtk
 
 gi.require_version('Gtk', '3.0')
-from utilities import *
 
 
 class GIN3DConfigWriter:
@@ -180,8 +181,7 @@ class GIN3DConfigWriter:
 
     def get_fs_parameters(self):
 
-        cnfg_fs = {'AdvectionScheme': '0.00',
-                   'TemperatureAdvectionScheme': '0.00'}
+        cnfg_fs = {'AdvectionScheme': '0.00'}
 
         # Advection Scheme
 
@@ -196,18 +196,6 @@ class GIN3DConfigWriter:
             cnfg_fs['AdvectionScheme'] = ''
         elif self.active('fsp_rb_momentum_hybrid'):
             cnfg_fs['AdvectionScheme'] = self.text('fsp_text_momentum_hybrid')
-
-        # Temperature
-        if self.active('fsp_rb_temperature_cds'):
-            cnfg_fs['TemperatureAdvectionScheme'] = '0.00'
-        elif self.active('fsp_rb_temperature_fou'):
-            cnfg_fs['TemperatureAdvectionScheme'] = '1.00'
-        elif self.active('fsp_rb_temperature_quick'):
-            cnfg_fs['TemperatureAdvectionScheme'] = '-1.00'
-        elif self.active('fsp_rb_temperature_kappa'):
-            cnfg_fs['TemperatureAdvectionScheme'] = ''
-        elif self.active('fsp_rb_temperature_hybrid'):
-            cnfg_fs['TemperatureAdvectionScheme'] = self.text('fsp_text_temperature_hybrid')
 
         # Time Marching
         cnfg_fs['TimeMethod'] = self.text('fsp_timeMarching')
@@ -372,7 +360,25 @@ class GIN3DConfigWriter:
         cnfg_so['OutputFormat'] = outputFormat
 
         # Sampling
-        # -- need to do this section
+        cnfg_so['TrackInterval'] = self.text('so_text_physicalTime_interval')
+        coord_file = self.text('so_file_coordFile')
+
+        cnfg_so['TrackCoordFile'] = coord_file
+        if coord_file is None:
+            cnfg_so['TrackCoordinates'] = 0
+        else:
+            # parse the coord file
+            count = 0;
+            trackCoord = []
+            with open(coord_file, "r") as fp:
+                for line in fp:
+                    l = re.split('[, ]', line.strip())
+                    trackCoord.append(l)
+                    count += 1
+
+            cnfg_so['TrackCoordinates'] = count
+            if count > 0:
+                cnfg_so['TrackCoord'] = trackCoord
 
         # Time Series OPtions
         # Collect Statistics
@@ -417,28 +423,140 @@ class GIN3DConfigWriter:
     def get_tp_parameters(self):
         cnfg_tp = {}
         if self.cnfg['Main']['Temperature']:
-            cnfg_tp = {'Temp_West' : [self.text('temp_west_face'), self.text('temp_text_westFace')],
+            cnfg_tp = {'Temp_West': [self.text('temp_west_face'), self.text('temp_text_westFace')],
                        'Temp_East': [self.text('temp_east_face'), self.text('temp_text_eastFace')],
                        'Temp_North': [self.text('temp_north_face'), self.text('temp_text_northFace')],
                        'Temp_South': [self.text('temp_south_face'), self.text('temp_text_southFace')],
                        'Temp_Top': [self.text('temp_top_face'), self.text('temp_text_topFace')],
                        'Temp_Bottom': [self.text('temp_bottom_face'), self.text('temp_text_bottomFace')],
-                       'Beta' : self.text('temp_text_thermalExpansionCoefficient'),
-                       'Gamma' : self.text('temp_text_thermalDiffusivity'),
-                       'Source_PHI' : self.text('temp_text_soruceMagnitude')}
+                       'Gravity': [self.text('temp_text_gravity_x'), self.text('temp_text_gravity_y'),
+                                   self.text('temp_text_gravity_z')],
+                       'TurbulentPrandtl': self.text('temp_text_prandtlNumber'),
+                       'Temp_Infinity': self.text('temp_text_refTemperature'),
+                       'Beta': self.text('temp_text_thermalExpansionCoefficient'),
+                       'Gamma': self.text('temp_text_thermalDiffusivity'),
+                       'Source_PHI': self.text('temp_text_sourceMagnitude'),
+                       'TemperatureAdvectionScheme': '0.00'}
+
+            # Temperature
+            if self.active('fsp_rb_temperature_cds'):
+                cnfg_tp['TemperatureAdvectionScheme'] = '0.00'
+            elif self.active('fsp_rb_temperature_fou'):
+                cnfg_tp['TemperatureAdvectionScheme'] = '1.00'
+            elif self.active('fsp_rb_temperature_quick'):
+                cnfg_tp['TemperatureAdvectionScheme'] = '-1.00'
+            elif self.active('fsp_rb_temperature_kappa'):
+                cnfg_tp['TemperatureAdvectionScheme'] = ''
+            elif self.active('fsp_rb_temperature_hybrid'):
+                cnfg_tp['TemperatureAdvectionScheme'] = self.text('fsp_text_temperature_hybrid')
 
         return cnfg_tp
 
-    def get_tm_parameter(self):
+    def get_tm_parameters(self):
         cnfg_tm = {}
+        # Turbulence Model
+        # LES
         if self.cnfg['Main']['Turbulence']:
-            cnfg_tm = {}
+            if self.active('tm_rb_originalSmagorinsky'):
+                cnfg_tm['TurbulenceModel'] = 'Smagorinsky'
+            elif self.active('tm_rb_lagrangianDynamicSmagorinsky'):
+                cnfg_tm['TurbulenceModel'] = 'LagDynamic'
+            elif self.active('tm_rb_prandtlSmagorinsky'):
+                cnfg_tm['TurbulenceModel'] = 'SmagRANS'
+            elif self.active('tm_rb_prandtlLagrangianDynamicSmagorinsky'):
+                cnfg_tm['TurbulenceModel'] = 'LagDynRANS'
+
+            # Subgrid Scale Parameters
+            # Smagorinsky Coefficient
+            cnfg_tm['TurbCS'] = self.text('tm_text_smagorinskyCoefficient')
+            # RANS-LES Blending Height
+            cnfg_tm['TransitionHeight'] = self.text('tm_text_blendingHeight')
+
+            # Distance Field
+            distance_field_opt = self.text('tm_list_distanceField')
+            if distance_field_opt == 0:
+                file = self.text('tm_file_distanceField')
+                if file is not None:
+                    cnfg_tm['DistanceField'] = file
+                else:
+                    cnfg_tm['DistanceField'] = ''
+            elif distance_field_opt == 1:
+                if self.active('tm_rb_channel_x'):
+                    cnfg_tm['DistanceField'] = 'TPC_X_WallNormal'
+                elif self.active('tm_rb_channel_y'):
+                    cnfg_tm['DistanceField'] = 'TPC_Y_WallNormal'
+                elif self.active('tm_rb_channel_z'):
+                    cnfg_tm['DistanceField'] = 'TPC_Z_WallNormal'
+        else:
+            cnfg_tm['TurbulenceModel'] = 'Laminar'
         return cnfg_tm
 
-    def get_ge_parameter(self):
+    def get_ge_parameters(self):
         cnfg_ge = {}
         if self.cnfg['Main']['SolidGeometry']:
-            cnfg_ge = {}
+            ib_file = self.text('geom_file_ibfiles')
+
+            count = 0;
+            # parse the IB Files
+            if ib_file is not None:
+                with open(ib_file, "r") as fp:
+                    for line in fp:
+                        l = line.strip().replace('\t', '')
+                        if not (l.startswith('#') or '' == l):
+                            if '_ibnode_s' in l:
+                                cnfg_ge['IBNodeFile_S'] = l
+                                count += 1
+                            elif '_ibnode_u' in l:
+                                cnfg_ge['IBNodeFile_U'] = l
+                                count += 1
+                            elif '_ibnode_v' in l:
+                                cnfg_ge['IBNodeFile_V'] = l
+                                count += 1
+                            elif '_ibnode_w' in l:
+                                cnfg_ge['IBNodeFile_W'] = l
+                                count += 1
+                            elif '_flag_s' in l:
+                                cnfg_ge['IBFlagFile_S'] = l
+                                count += 1
+                            elif '_flag_u' in l:
+                                cnfg_ge['IBFlagFile_U'] = l
+                                count += 1
+                            elif '_flag_v' in l:
+                                cnfg_ge['IBFlagFile_V'] = l
+                                count += 1
+                            elif '_flag_w' in l:
+                                cnfg_ge['IBFlagFile_W'] = l
+                                count += 1
+                if count != 8:
+                    log('Error parsing, please review:  ' + ib_file, 'e')
+                    ib_file = None
+
+            cnfg_ge['IBFiles'] = ib_file
+
+            # IB Reconstruction Scheme
+            if self.active('geom_rb_ib_linear'):
+                cnfg_ge['IBReconstruction'] = 'Linear'
+            elif self.active('geom_rb_ib_roughLogLaw'):
+                cnfg_ge['IBReconstruction'] = 'RoughLogLaw'
+                cnfg_ge['Roughness'] = self.text('geom_text_roughness')
+            elif self.active('geom_rb_ib_powerLaw'):
+                cnfg_ge['IBReconstruction'] = 'OneSevenths'
+
+            # Distance Field
+            distance_field_opt = self.text('geom_list_distanceField')
+            if distance_field_opt == 0:
+                file = self.text('geom_file_distanceField')
+                if file is not None:
+                    cnfg_ge['DistanceField'] = file
+                else:
+                    cnfg_ge['DistanceField'] = ''
+            elif distance_field_opt == 1:
+                if self.active('geom_rb_channel_x'):
+                    cnfg_ge['DistanceField'] = 'TPC_X_WallNormal'
+                elif self.active('geom_rb_channel_y'):
+                    cnfg_ge['DistanceField'] = 'TPC_Y_WallNormal'
+                elif self.active('geom_rb_channel_z'):
+                    cnfg_ge['DistanceField'] = 'TPC_Z_WallNormal'
         return cnfg_ge
 
     # Write Data to File
@@ -492,12 +610,12 @@ class GIN3DConfigWriter:
             # Item 8
             # Don't do anything for this one yet
             # for testing
-            fp.write("Turbulence   " + str(cnfg_main['Turbulence']))
+            fp.write("Turbulence   " + str(cnfg_main['Turbulence']) + "\n")
 
             # Item 9
             # Do nothing
             # for testing
-            fp.write("SolidGeometry   " + str(cnfg_main['SolidGeometry']))
+            fp.write("SolidGeometry   " + str(cnfg_main['SolidGeometry']) + "\n")
 
             # Item 10
             if self.forcing == "constPresGrad":
@@ -668,9 +786,6 @@ class GIN3DConfigWriter:
             fp.write("AdvectionScheme " + cnfg_fs['AdvectionScheme'] + '\n')
             fp.write("\n\n")
 
-            fp.write("TemperatureAdvectionScheme " + cnfg_fs['TemperatureAdvectionScheme'] + '\n')
-            fp.write("\n\n")
-
             fp.write("# The time derivative method\n")
             fp.write("#   Euler        (first order forward Euler)\n")
             fp.write("#   AdamsBash    (second order Adams-Bashforth, aka 'AB2')\n")
@@ -687,7 +802,7 @@ class GIN3DConfigWriter:
             fp.write("\n\n")
 
             fp.write("#DTStability*dz*dz/Nu is the viscous dt limit\n")
-            fp.write("#DTStability   " + cnfg_fs['DTStability'] + '\n')
+            fp.write("DTStability   " + cnfg_fs['DTStability'] + '\n')
             fp.write("\n\n")
 
             fp.write("# Choose either Iterative or Multigrid\n")
@@ -907,6 +1022,40 @@ class GIN3DConfigWriter:
                 pass
             fp.write("\n")
 
+            fp.write("# -------------------------------------------------------------------------------\n")
+            fp.write("#                          Variable Tracking\n")
+            fp.write("# -------------------------------------------------------------------------------\n")
+            fp.write("# Track all applicable primitive variables as the simulation progresses.\n")
+            fp.write("#\n")
+            fp.write("# Give the physical time interval to output the variables e.g., giving a value\n")
+            fp.write("# of 20.0 will output every 20 seconds of physical time.\n")
+            fp.write("TrackInterval" + cnfg_so['TrackInterval'] + "\n")
+            fp.write("\n")
+
+            tc_file = cnfg_so['TrackCoordFile']
+            if tc_file is not None:
+                fp.write("# Give the integer number of coordinates to track after the TrackCoordinates tag.\n")
+                fp.write("# Important for allocation when loading in the tracked coordinates.\n")
+                fp.write("# List the coordinates where tracking will occur with the TrackCoord tag in\n")
+                fp.write("# front, one per line, in the format:\n")
+                fp.write("# TrackCoord x y z\n")
+                fp.write("# where x, y, and z are floating point numbers. Set number of coordinates to\n")
+                fp.write("# track to 0 if no tracking is desired.\n")
+                fp.write("#\n")
+                fp.write("#<TrackCoordFile> " + tc_file + "\n")
+                fp.write("TrackCoordinates " + str(cnfg_so['TrackCoordinates']) + "\n")
+
+                try:
+                    trackCoords = cnfg_so['TrackCoordinates']
+                    if trackCoords > 0:
+                        trackCoord = cnfg_so['TrackCoord']
+                        for tc in trackCoord:
+                            fp.write("TrackCoord  " + " ".join(tc) + "\n")
+                except Exception as err:
+                    log(err, 'e')
+
+            fp.write("#\n")
+
             # Temperature Equation Parameters
             if cnfg_main['Temperature']:
                 try:
@@ -922,13 +1071,14 @@ class GIN3DConfigWriter:
                     fp.write("#    Pr = (Nu * RhoInf) / Gamma\n")
                     fp.write("#    Gr = Ra / Pr\n")
                     fp.write("\n")
-                    #fp.write("# Gravity magnitude\n")
-                    #fp.write("Gravity 9.801\n")
+                    fp.write("TemperatureAdvectionScheme " + cnfg_tp['TemperatureAdvectionScheme'] + '\n')
+                    fp.write("\n\n")
+                    fp.write("# Gravity magnitude\n")
+                    fp.write("Gravity " + " ".join(cnfg_tp['Gravity']) + "\n")
                     fp.write("# Thermal expansion coefficient (1/T for ideal gas)\n")
-                    fp.write("Beta " +  cnfg_tp['Beta'] + "\n")
-                    #fp.write("# Typically 1.0.\n")
-                    #fp.write("# Setting this to 0 will mean temperature will not drive momentum.\n")
-                    #fp.write("Rho_Infinity 1\n")
+                    fp.write("Beta " + cnfg_tp['Beta'] + "\n")
+                    fp.write("Temp_Infinity " + cnfg_tp['Temp_Infinity'] + "\n")
+                    fp.write("TurbulentPrandtl " + cnfg_tp['TurbulentPrandtl'] + "\n")
                     fp.write("# Thermal Diffusivity  (Nu / Prandtl number)\n")
                     fp.write("Gamma " + cnfg_tp['Gamma'] + "\n")
                     fp.write("\n")
@@ -943,7 +1093,7 @@ class GIN3DConfigWriter:
                     fp.write("Temp_Top    " + " ".join(cnfg_tp['Temp_Top']) + "\n")
                     fp.write("\n")
                     fp.write("# Source term for temperature\n")
-                    fp.write("Source_PHI " + cnfg_tp['Source_PHI']+ "\n")
+                    fp.write("Source_PHI " + cnfg_tp['Source_PHI'] + "\n")
                     fp.write("\n")
 
                 except Exception as err:
@@ -952,14 +1102,114 @@ class GIN3DConfigWriter:
             # Turbulence Model Parameters
             if cnfg_main['Turbulence']:
                 try:
-                    pass
+                    cnfg_tm = self.cnfg['TM']
+
+                    fp.write("# -------------------------------------------------------------------------------\n")
+                    fp.write("#                            Turbulence Parameters\n")
+                    fp.write("# -------------------------------------------------------------------------------\n")
+                    fp.write("\n")
+                    fp.write("# The filter width for LES models is the numerical grid.\n")
+                    fp.write("# Turbulence model:\n")
+                    fp.write("#   Laminar        Initialize simulation as laminar\n")
+                    fp.write("#   None           No turbulence model but initialized as turbulent flow\n")
+                    fp.write("#   Smagorinsky    The basic eddy viscosity model (J. Smagorinsky, 1963)\n")
+                    fp.write("#   LagDynamic     The Lagrangian dynamic model Ref:(Meneveau, Lund, Cabot; 1996)\n")
+                    fp.write("#   SmagRANS       A hybrid RANS/LES approach with the original Smagorinsky\n")
+                    fp.write("#                    (LES) and Prandtl mixing length (RANS) models\n")
+                    fp.write("#   LagDynRANS     A hybrid RANS/LES approach with the Lagrangian dynamic\n")
+                    fp.write("#                    (LES) and Prandtl mixing length (RANS)  models\n")
+                    fp.write("#   RSCSmag        Reynolds-stress-constrained Smagorinsky model.\n")
+                    fp.write("#                  See S. Chen et al., JFM, 2012 for RSC concept.\n")
+                    fp.write("#   RSCLagDyn      Reynolds-stress-constrained Lagrangian dynamic model.\n")
+                    fp.write("#                  See S. Chen et al., JFM, 2012 for RSC concept.\n")
+                    fp.write("#   RSCSmagIB      The RSCSmag option but with immersed boundary reconstruction.\n")
+                    fp.write("#   RSCLagDynIB    The RSCLagDyn option but with immersed boundary reconstruction.\n")
+                    fp.write("#   LinearForcing  Linear forcing for DNS of isotropic turbulence.\n")
+                    fp.write("#                  See T.S. Lundgren, CTR Briefs, 2003.\n")
+                    fp.write("#   MasonThomson   Mason Thomson model used with original Smagorinsky model.\n")
+                    fp.write("#                  See Mason, Thomson, JFM, 1992\n")
+                    fp.write("\n")
+                    fp.write("TurbulenceModel  " + cnfg_tm['TurbulenceModel'] + "\n")
+                    fp.write("\n")
+                    fp.write("# The default initialization is a quiescent flow field.  Certain combinations\n")
+                    fp.write("# of boundary conditions and flow regimes have preset initial conditions in\n")
+                    fp.write("# the code, see Domain Boundary Conditions section for more details.  Care\n")
+                    fp.write("# should be taken when using the LagDynamic model as a quiescent field will\n")
+                    fp.write("# result in Lij and Mij both being zero.  Cs in with this model is essentially\n")
+                    fp.write("# (LijMij) / (MijMij).\n")
+                    fp.write("# Cs for Smagorinsky model.  Typically 0.01 - 0.25.\n")
+                    fp.write("TurbCS " + cnfg_tm['TurbCS'] + "\n")
+                    fp.write("\n")
+                    fp.write("# For RANS/LES transition height, either set the tag\n")
+                    fp.write("# TransitionHeight to a value above 0.00001 or set the\n")
+                    fp.write("# dimensionless parameter Zeta,\n")
+                    fp.write("#   Zeta = h / (2*Delta),\n")
+                    fp.write("# where h is height normal to surface and Delta is filter width.\n")
+                    fp.write("# TransitionHeight overrides Zeta if both are set.\n")
+                    fp.write("TransitionHeight  " + cnfg_tm['TransitionHeight'] + "\n")
+                    fp.write("\n")
+
+                    try:
+                        df = cnfg_tm['DistanceField']
+                        fp.write("# File for loading distance field\n")
+                        fp.write("DistanceField  " + df + "\n")
+                    except:
+                        pass
+
                 except Exception as err:
                     log(err, 'e')
 
             # Geometry Parameters
             if cnfg_main['SolidGeometry']:
                 try:
-                    pass
+                    cnfg_ge = self.cnfg['GE']
+
+                    fp.write("# -------------------------------------------------------------------------------\n")
+                    fp.write("#                            Geometry Parameters\n")
+                    fp.write("# -------------------------------------------------------------------------------\n")
+                    fp.write("\n")
+
+                    ib_file = cnfg_ge['IBFiles']
+                    if ib_file is not None:
+                        fp.write("# The following are only used for the Immersed Boundary Method.\n")
+                        fp.write("\n")
+                        fp.write("# The files to load the immersed boundary information from. See README for or\n")
+                        fp.write("# samples under ibdata directory for format. There will be a total of eight files\n")
+                        fp.write("# to load, four immersed boundary node files and four obstacles flag files.\n")
+                        fp.write("# The four files of each type correspond to the following locations:\n")
+                        fp.write("#     Scalar  (Cell center)\n")
+                        fp.write("#     U Face  (Location of u velocity component)\n")
+                        fp.write("#     V Face  (Location of v velocity component)\n")
+                        fp.write("#     W Face  (Location of w velocity component)\n")
+                        fp.write("# The number of nodes loaded for each location is set above with the Obstruction\n")
+                        fp.write("# tag.\n")
+                        fp.write("#\n")
+                        fp.write("# With the option of IBDF, a distance field file must be specified that is in\n")
+                        fp.write("# the same format as as the file used for restarting a simulation.\n")
+                        fp.write("\n")
+                        fp.write("#<IBFiles> " + ib_file + "\n")
+                        fp.write("# Files for loading immersed boundary nodes\n")
+                        fp.write("IBNodeFile_S " + cnfg_ge['IBNodeFile_S'] + "\n")
+                        fp.write("IBNodeFile_U " + cnfg_ge['IBNodeFile_U'] + "\n")
+                        fp.write("IBNodeFile_V " + cnfg_ge['IBNodeFile_V'] + "\n")
+                        fp.write("IBNodeFile_W " + cnfg_ge['IBNodeFile_W'] + "\n")
+                        fp.write("\n")
+                        fp.write("# Files for loading obstacle flags\n")
+                        fp.write("IBFlagFile_S " + cnfg_ge['IBFlagFile_S'] + "\n")
+                        fp.write("IBFlagFile_U " + cnfg_ge['IBFlagFile_U'] + "\n")
+                        fp.write("IBFlagFile_V " + cnfg_ge['IBFlagFile_V'] + "\n")
+                        fp.write("IBFlagFile_W " + cnfg_ge['IBFlagFile_W'] + "\n")
+                        fp.write("\n")
+
+                        if not cnfg_main['Turbulence']:
+                            try:
+                                df = cnfg_ge['DistanceField']
+                                fp.write("# File for loading distance field\n")
+                                fp.write("DistanceField  " + df + "\n")
+                            except:
+                                pass
+
+
                 except Exception as err:
                     log(err, 'e')
 

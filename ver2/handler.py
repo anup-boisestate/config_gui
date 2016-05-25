@@ -8,56 +8,6 @@ from gi.repository import Gdk
 gi.require_version('Gtk', '3.0')
 
 
-# ------------ Helper Functions ---------------
-
-def isInt(data):
-    try:
-        value = int(data)
-        return True
-    except ValueError:
-        pass
-    return False
-
-
-def isFloat(data):
-    try:
-        value = float(eval(str(data)))
-        return True
-    except:
-        pass
-    return False
-
-
-def isPositive(data):
-    try:
-        value = eval(str(data))
-        if value < 0:
-            raise ValueError('Negative value')
-        return True
-    except:
-        pass
-    return False
-
-
-def text(obj_id, evaluate=False):
-    obj = Handler.gtkBuilder.get_object(obj_id)
-    if obj is not None:
-        if isinstance(obj, Gtk.ComboBoxText):
-            return obj.get_active_id()
-        else:
-            val = obj.get_text()
-            if val != '' and evaluate:
-                return str(eval(val))
-            return val
-    return ''
-
-
-def get_obj(obj_id):
-    return Handler.gtkBuilder.get_object(obj_id)
-
-
-# ---------------------------------------------
-
 class WindowHandler:
     @staticmethod
     def on_MainWindow_destroy(*args):
@@ -71,20 +21,19 @@ class FileMenuHandler:
         log('GIN3D config window closing...', 'd')
         Gtk.main_quit(*args)
 
-    @staticmethod
-    def on_filemenu_open_activate(obj, data=None):
+    def on_filemenu_open_activate(self, obj, data=None):
         filters = {'Gin3D Config': '*.cfg'}
-        filename = file_chooser(Handler.gtkConfigWindow, filters)
+        filename = file_chooser(self.gtkConfigWindow, filters)
 
         if filename is not None:
             from GIN3DConfigWin import GIN3DConfigWin
             GIN3DConfigWin(filename)
 
-    @staticmethod
-    def on_filemenu_saveas_activate(obj, data=None):
+    def on_filemenu_saveas_activate(self, obj, data=None):
         filters = {'Gin3D Config': '*.cfg'}
-        filename = file_saveas(Handler.gtkConfigWindow, filters)
-        GIN3DConfigWriter(Handler.gtkBuilder).to_file(filename)
+        filename = file_saveas(self.gtkConfigWindow, filters)
+        if filename is not None:
+            GIN3DConfigWriter(self.gtkBuilder).to_file(filename)
 
 
 class MainParametersHandler:
@@ -98,6 +47,15 @@ class MainParametersHandler:
     def on_simParam_switch_geometry_toggle(self, obj, data):
         self.toggle_tab(7, obj.get_active(), obj.get_ancestor(Gtk.Notebook))
 
+    def on_out_copy_refLength_to_geom(self, obj, data=None):
+        copy_to = self.get_obj('geom_text_powerLaw_refLength')
+        copy_to.set_text(obj.get_text())
+        event = Gdk.Event(Gdk.EventType.FOCUS_CHANGE)
+        event.send_event = True
+        event.in_ = False
+        copy_to.emit('focus-out-event', event)
+
+
     @staticmethod
     def toggle_tab(tabNo, state, notebook):
 
@@ -109,9 +67,9 @@ class MainParametersHandler:
     # Forcing callback functions
 
     def toggle_entry_constPresGrad(self, state):
-        fx = get_obj("simParam_txtbox_fx")
-        fy = get_obj("simParam_txtbox_fy")
-        fz = get_obj("simParam_txtbox_fz")
+        fx = self.get_obj("simParam_txtbox_fx")
+        fy = self.get_obj("simParam_txtbox_fy")
+        fz = self.get_obj("simParam_txtbox_fz")
 
         fx.set_sensitive(state)
         fy.set_sensitive(state)
@@ -119,7 +77,7 @@ class MainParametersHandler:
 
     def delete_forcing_region_entries(self, n):
 
-        parentBox = get_obj("simParam_forcing_cmfr_box")
+        parentBox = self.get_obj("simParam_forcing_cmfr_box")
 
         childList = parentBox.get_children()
         noOfChildren = len(childList)
@@ -128,7 +86,7 @@ class MainParametersHandler:
 
     def create_forcing_region_entries(self, n, start):
 
-        parentBox = get_obj("simParam_forcing_cmfr_box")
+        parentBox = self.get_obj("simParam_forcing_cmfr_box")
 
         for i in range(start, n + 1):
             hgrid = Gtk.Grid()
@@ -192,13 +150,13 @@ class MainParametersHandler:
         try:
             noOfForcingRegions = int(obj.get_text())
 
-            if not isPositive(noOfForcingRegions) or noOfForcingRegions == 0:
+            if not self.isPositive(noOfForcingRegions) or noOfForcingRegions == 0:
                 noOfForcingRegions = 1
                 raise ValueError
         except ValueError:
             obj.set_text(str(noOfForcingRegions))
 
-        parentBox = get_obj("simParam_forcing_cmfr_box")
+        parentBox = self.get_obj("simParam_forcing_cmfr_box")
 
         # Subtracting 1 because one of the children is there by default
         # which is the line to input "Number of Forcing Regions" in GUI
@@ -215,9 +173,9 @@ class MainParametersHandler:
         return
 
     def activate_forcing_region(self):
-        obj_fr = get_obj("forcing_region")
+        obj_fr = self.get_obj("forcing_region")
         if obj_fr is None:
-            obj_entry_fr = get_obj("no_of_forcing_regions")
+            obj_entry_fr = self.get_obj("no_of_forcing_regions")
             if obj_entry_fr is not None:
                 self.on_forcingregion_changed(obj_entry_fr)
             else:
@@ -226,10 +184,10 @@ class MainParametersHandler:
     def toggle_entry_constMassFlowRate(self, state):
         if state:
 
-            get_obj("simParam_forcing_cmfr_box").show()
+            self.get_obj("simParam_forcing_cmfr_box").show()
             self.activate_forcing_region()
         else:
-            get_obj("simParam_forcing_cmfr_box").hide()
+            self.get_obj("simParam_forcing_cmfr_box").hide()
 
     def on_toggled_forcing(self, obj):
         state = obj.get_active()
@@ -249,35 +207,32 @@ class BoundaryConditionsHandler:
             else:
                 self.check_face_value_for_inlet()
 
-    @staticmethod
-    def show_inlet_profile():
-        inletBox = get_obj("inletProfile_box")
+    def show_inlet_profile(self):
+        inletBox = self.get_obj("inletProfile_box")
         if inletBox is not None:
             if not inletBox.is_visible():
                 inletBox.show()
                 # enable 'Same as Inlet Profile' radio button in Initial Conditions
-                get_obj("ic_rb_sameAsInletProfile").set_sensitive(True)
+                self.get_obj("ic_rb_sameAsInletProfile").set_sensitive(True)
 
-    @staticmethod
-    def check_face_value_for_inlet():
-        inletBox = get_obj("inletProfile_box")
+    def check_face_value_for_inlet(self):
+        inletBox = self.get_obj("inletProfile_box")
         if inletBox is not None:
             if inletBox.is_visible():
                 faceTypeList = ["west", "east", "north", "south", "top", "bottom"]
                 for each in faceTypeList:
-                    obj = get_obj(each + "_face")
+                    obj = self.get_obj(each + "_face")
                     if obj is not None:
                         if obj.get_active_text() == "inlet":
                             return
 
                 inletBox.hide()
                 # enable 'Same as Inlet Profile' radio button in Initial Conditions
-                get_obj("ic_rb_sameAsInletProfile").set_sensitive(False)
-                get_obj("ic_rb_zeroField").set_active(True)
+                self.get_obj("ic_rb_sameAsInletProfile").set_sensitive(False)
+                self.get_obj("ic_rb_zeroField").set_active(True)
 
-    @staticmethod
-    def on_toggle_variable_profile_for_inlet(obj, data=None):
-        vprofile_grid = get_obj("variable_profile_inlet_grid")
+    def on_toggle_variable_profile_for_inlet(self, obj, data=None):
+        vprofile_grid = self.get_obj("variable_profile_inlet_grid")
         if vprofile_grid is not None and obj is not None:
             state = not obj.get_active()
             if state:
@@ -285,8 +240,7 @@ class BoundaryConditionsHandler:
             else:
                 vprofile_grid.hide()
 
-    @staticmethod
-    def on_toggle_rb_variable_profile_for_inlet(obj):
+    def on_toggle_rb_variable_profile_for_inlet(self, obj):
         if obj is None:
             return
 
@@ -295,47 +249,46 @@ class BoundaryConditionsHandler:
 
         if radioButton == "Rough Wall":
             # Always disabled - uncomment to allow users to change Kappa
-            # rough_k = get_obj("inletProfile_rough_k");
+            # rough_k = self.get_obj("inletProfile_rough_k");
             # if(rough_k != None):
             #    rough_k.set_sensitive(state)
 
-            rough_z_o = get_obj("inletProfile_rough_z_o")
+            rough_z_o = self.get_obj("inletProfile_rough_z_o")
             if rough_z_o is not None:
                 rough_z_o.set_sensitive(state)
                 # Uncomment to enable options for specific type
                 # elif radioButton == "Smooth Wall":
                 # Always disabled - uncomment to allow users to change Kappa
-                # smooth_k = get_obj("inletProfile_smooth_k");
+                # smooth_k = self.get_obj("inletProfile_smooth_k");
                 # if(smooth_k != None):
                 #    smooth_k.set_sensitive(state)
                 # Always disabled - uncomment to allow users to change b
-                # smooth_b = get_obj("inletProfile_smooth_b");
+                # smooth_b = self.get_obj("inletProfile_smooth_b");
                 # if(smooth_b != None):
                 #    smooth_b.set_sensitive(state)
 
                 # elif radioButton == "Power Law":
                 # Always disabled - uncomment to allow users to change n
-                # power_n = get_obj("inletProfile_power_n");
+                # power_n = self.get_obj("inletProfile_power_n");
                 # if(power_n != None):
                 #    power_n.set_sensitive(state)
 
                 # elif radioButton == "Parabolic":
                 # Always disabled - uncomment to allow users to change a,b,c
-                # parabolic_a = get_obj("inletProfile_parabolic_a");
+                # parabolic_a = self.get_obj("inletProfile_parabolic_a");
                 # if(parabolic_a != None):
                 #    parabolic_a.set_sensitive(state)
 
-                # parabolic_b = get_obj("inletProfile_parabolic_b");
+                # parabolic_b = self.get_obj("inletProfile_parabolic_b");
                 # if(parabolic_b != None):
                 #    parabolic_b.set_sensitive(state)
 
-                # parabolic_c = get_obj("inletProfile_parabolic_c");
+                # parabolic_c = self.get_obj("inletProfile_parabolic_c");
                 # if(parabolic_c != None):
                 #    parabolic_c.set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_turbulent_for_inlet(obj, data=None):
-        turbulent_grid = get_obj("turbulent_inlet_grid")
+    def on_toggle_turbulent_for_inlet(self, obj, data=None):
+        turbulent_grid = self.get_obj("turbulent_inlet_grid")
         if turbulent_grid is not None and obj is not None:
             state = not obj.get_active()
             if state:
@@ -348,21 +301,20 @@ class BoundaryConditionsHandler:
     # given caps the value at 50
     def on_entry_out_check_value(self, obj, data=None):
         val = obj.get_text()
-        if isInt(val) and isPositive(val):
+        if self.isInt(val) and self.isPositive(val):
             val = int(val)
         else:
             return
 
-        nx_text = text("mesh_nx")
-        ny_text = text("mesh_ny")
+        nx_text = self.text("mesh_nx")
+        ny_text = self.text("mesh_ny")
         nx = 50 if nx_text == "" else int(nx_text)
         ny = 50 if ny_text == "" else int(ny_text)
         obj.set_text(str(val) if val < min(nx, ny) else "")
 
 
 class InitialConditionsHandler:
-    @staticmethod
-    def on_toggle_rb_ic(obj):
+    def on_toggle_rb_ic(self, obj):
         if obj is None:
             return
 
@@ -370,21 +322,21 @@ class InitialConditionsHandler:
         radioButton = obj.get_label()
 
         if radioButton == "Uniform":
-            u = get_obj("ic_uniform_u")
+            u = self.get_obj("ic_uniform_u")
             if u is not None:
                 u.set_sensitive(state)
-            v = get_obj("ic_uniform_v")
+            v = self.get_obj("ic_uniform_v")
             if v is not None:
                 v.set_sensitive(state)
-            w = get_obj("ic_uniform_w")
+            w = self.get_obj("ic_uniform_w")
             if w is not None:
                 w.set_sensitive(state)
 
         elif radioButton == "Special Cases":
-            sc = get_obj("ic_list_specialCases")
+            sc = self.get_obj("ic_list_specialCases")
             if sc is not None:
                 sc.set_sensitive(state)
-                detailBox = get_obj("ic_text_specialCases_detail")
+                detailBox = self.get_obj("ic_text_specialCases_detail")
                 # detailBox.set_editable(False)
                 if detailBox is not None:
                     if not state:
@@ -392,10 +344,9 @@ class InitialConditionsHandler:
                     else:
                         detailBox.show()
 
-    @staticmethod
-    def on_changed_ic_specialCases(obj, data=None):
-        sc = get_obj("ic_list_specialCases")
-        detailBox = get_obj("ic_text_specialCases_detail")
+    def on_changed_ic_specialCases(self, obj, data=None):
+        sc = self.get_obj("ic_list_specialCases")
+        detailBox = self.get_obj("ic_text_specialCases_detail")
         if sc is not None and detailBox is not None:
             a_id = sc.get_active_id()
 
@@ -434,44 +385,41 @@ class InitialConditionsHandler:
 
 
 class FlowSolverParametersHandler:
-    @staticmethod
-    def on_toggled_rb_momentum(obj):
+    def on_toggled_rb_momentum(self, obj):
 
         id = Gtk.Buildable.get_name(obj)
         state = obj.get_active()
 
         if id == "fsp_rb_momentum_kappa":
-            kappa_text = get_obj("fsp_text_momentum_kappa")
+            kappa_text = self.get_obj("fsp_text_momentum_kappa")
             if kappa_text is not None:
                 kappa_text.set_sensitive(state)
 
         elif id == "fsp_rb_momentum_hybrid":
-            hybrid_text = get_obj("fsp_text_momentum_hybrid")
+            hybrid_text = self.get_obj("fsp_text_momentum_hybrid")
             if hybrid_text is not None:
                 hybrid_text.set_sensitive(state)
 
-    @staticmethod
-    def on_toggled_rb_temperature(obj):
+    def on_toggled_rb_temperature(self, obj):
 
         id = Gtk.Buildable.get_name(obj)
         state = obj.get_active()
 
         if id == "fsp_rb_temperature_kappa":
-            kappa_text = get_obj("fsp_text_temperature_kappa")
+            kappa_text = self.get_obj("fsp_text_temperature_kappa")
             if kappa_text is not None:
                 kappa_text.set_sensitive(state)
 
         elif id == "fsp_rb_temperature_hybrid":
-            hybrid_text = get_obj("fsp_text_temperature_hybrid")
+            hybrid_text = self.get_obj("fsp_text_temperature_hybrid")
             if hybrid_text is not None:
                 hybrid_text.set_sensitive(state)
 
-    @staticmethod
-    def on_changed_timeStepSize(obj, data=None):
+    def on_changed_timeStepSize(self, obj, data=None):
 
         timeStepSize = obj.get_active_text()
-        variable_grid = get_obj("fsp_grid_timeStepSize_variable")
-        constant_grid = get_obj("fsp_grid_timeStepSize_constant")
+        variable_grid = self.get_obj("fsp_grid_timeStepSize_variable")
+        constant_grid = self.get_obj("fsp_grid_timeStepSize_constant")
 
         if variable_grid is not None and constant_grid is not None:
 
@@ -483,12 +431,11 @@ class FlowSolverParametersHandler:
                 variable_grid.hide()
                 constant_grid.show()
 
-    @staticmethod
-    def on_changed_poissonSolver(obj, data=None):
+    def on_changed_poissonSolver(self, obj, data=None):
 
         poissonSolver = obj.get_active_text()
-        multigrid_grid = get_obj("fsp_grid_poissonSolver_multigrid")
-        pointJacobi_grid = get_obj("fsp_grid_poissonSolver_pointJacobi")
+        multigrid_grid = self.get_obj("fsp_grid_poissonSolver_multigrid")
+        pointJacobi_grid = self.get_obj("fsp_grid_poissonSolver_pointJacobi")
 
         if multigrid_grid is not None and pointJacobi_grid is not None:
 
@@ -550,23 +497,21 @@ class FlowSolverParametersHandler:
 
 
 class SolutionOutputHandler:
-
     def on_toggle_switch_restartSolution(self, obj, data):
         state = not obj.get_active()
-        folderChooser = get_obj("so_folder_restartDirectory")
+        folderChooser = self.get_obj("so_folder_restartDirectory")
         if folderChooser is not None:
             folderChooser.set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_writeRestartFiles(obj, data=None):
-        velocity_cb = get_obj("so_cb_outputTXT_u")
-        pressure_cb = get_obj("so_cb_outputTXT_p")
-        temperature_cb = get_obj("so_cb_outputTXT_t")
+    def on_toggle_cb_writeRestartFiles(self, obj, data=None):
+        velocity_cb = self.get_obj("so_cb_outputTXT_u")
+        pressure_cb = self.get_obj("so_cb_outputTXT_p")
+        temperature_cb = self.get_obj("so_cb_outputTXT_t")
         state = obj.get_active()
-        file_format_selected = get_obj('so_cb_rawData_binary').get_active() or \
-                               get_obj('so_cb_rawData_parallelBinary').get_active() or \
-                               get_obj('so_cb_rawData_ASCII').get_active() or \
-                               get_obj('so_cb_rawData_parallelASCII').get_active()
+        file_format_selected = self.get_obj('so_cb_rawData_binary').get_active() or \
+                               self.get_obj('so_cb_rawData_parallelBinary').get_active() or \
+                               self.get_obj('so_cb_rawData_ASCII').get_active() or \
+                               self.get_obj('so_cb_rawData_parallelASCII').get_active()
 
         if state:
             velocity_cb.set_active(state)
@@ -577,213 +522,189 @@ class SolutionOutputHandler:
             velocity_cb.set_sensitive(not state)
             pressure_cb.set_sensitive(not state)
 
-    @staticmethod
-    def on_button_clicked_rawData_selectAll(obj, data=None):
-        grid = get_obj("so_grid_rawData_outputVariables")
+    def on_button_clicked_rawData_selectAll(self, obj, data=None):
+        grid = self.get_obj("so_grid_rawData_outputVariables")
         if grid is not None:
             gList = grid.get_children()
             for var in gList:
                 var.set_active(True)
 
-    @staticmethod
-    def on_button_clicked_rawData_deselectAll(obj, data=None):
-        grid = get_obj("so_grid_rawData_outputVariables")
+    def on_button_clicked_rawData_deselectAll(self, obj, data=None):
+        grid = self.get_obj("so_grid_rawData_outputVariables")
         if grid is not None:
             gList = grid.get_children()
             for var in gList:
                 if var.get_sensitive():
                     var.set_active(False)
 
-    @staticmethod
-    def on_button_clicked_formatOutput_selectAll(obj, data=None):
-        grid = get_obj("so_grid_formatOutput_outputVariables")
+    def on_button_clicked_formatOutput_selectAll(self, obj, data=None):
+        grid = self.get_obj("so_grid_formatOutput_outputVariables")
         if grid is not None:
             gList = grid.get_children()
             for var in gList:
                 var.set_active(True)
 
-    @staticmethod
-    def on_button_clicked_formatOutput_deselectAll(obj, data=None):
-        grid = get_obj("so_grid_formatOutput_outputVariables")
+    def on_button_clicked_formatOutput_deselectAll(self, obj, data=None):
+        grid = self.get_obj("so_grid_formatOutput_outputVariables")
         if grid is not None:
             gList = grid.get_children()
             for var in gList:
                 if var.get_sensitive():
                     var.set_active(False)
 
-    @staticmethod
-    def on_toggle_cb_formatOutput_timeStep(obj, data=None):
+    def on_toggle_cb_formatOutput_timeStep(self, obj, data=None):
         state = obj.get_active()
-        # get_obj("so_text_formatOutput_timeStep_start").set_sensitive(state)
-        get_obj("so_text_formatOutput_timeStep_interval1").set_sensitive(state)
-        # get_obj("so_text_formatOutput_timeStep_end").set_sensitive(state)
-        get_obj("so_cb_formatOutput_timeStep_switch").set_sensitive(state)
+        # self.get_obj("so_text_formatOutput_timeStep_start").set_sensitive(state)
+        self.get_obj("so_text_formatOutput_timeStep_interval1").set_sensitive(state)
+        # self.get_obj("so_text_formatOutput_timeStep_end").set_sensitive(state)
+        self.get_obj("so_cb_formatOutput_timeStep_switch").set_sensitive(state)
         if not state:
-            get_obj("so_cb_formatOutput_timeStep_switch").set_active(state)
+            self.get_obj("so_cb_formatOutput_timeStep_switch").set_active(state)
 
-    @staticmethod
-    def on_toggle_cb_formatOutput_timeStep_switch(obj, data=None):
+    def on_toggle_cb_formatOutput_timeStep_switch(self, obj, data=None):
         state = obj.get_active()
-        get_obj("so_text_formatOutput_timeStep_switch").set_sensitive(state)
-        get_obj("so_text_formatOutput_timeStep_interval2").set_sensitive(state)
+        self.get_obj("so_text_formatOutput_timeStep_switch").set_sensitive(state)
+        self.get_obj("so_text_formatOutput_timeStep_interval2").set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_formatOutput_physicalTime(obj, data=None):
+    def on_toggle_cb_formatOutput_physicalTime(self, obj, data=None):
         state = obj.get_active()
-        # get_obj("so_text_formatOutput_physicalTime_start").set_sensitive(state)
-        get_obj("so_text_formatOutput_physicalTime_interval1").set_sensitive(state)
-        # get_obj("so_text_formatOutput_physicalTime_end").set_sensitive(state)
-        get_obj("so_cb_formatOutput_physicalTime_switch").set_sensitive(state)
+        # self.get_obj("so_text_formatOutput_physicalTime_start").set_sensitive(state)
+        self.get_obj("so_text_formatOutput_physicalTime_interval1").set_sensitive(state)
+        # self.get_obj("so_text_formatOutput_physicalTime_end").set_sensitive(state)
+        self.get_obj("so_cb_formatOutput_physicalTime_switch").set_sensitive(state)
         if not state:
-            get_obj("so_cb_formatOutput_physicalTime_switch").set_active(state)
+            self.get_obj("so_cb_formatOutput_physicalTime_switch").set_active(state)
 
-    @staticmethod
-    def on_toggle_cb_formatOutput_physicalTime_switch(obj, data=None):
+    def on_toggle_cb_formatOutput_physicalTime_switch(self, obj, data=None):
         state = obj.get_active()
-        get_obj("so_text_formatOutput_physicalTime_switch").set_sensitive(state)
-        get_obj("so_text_formatOutput_physicalTime_interval2").set_sensitive(state)
+        self.get_obj("so_text_formatOutput_physicalTime_switch").set_sensitive(state)
+        self.get_obj("so_text_formatOutput_physicalTime_interval2").set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_rawData_timeStep(obj, data=None):
+    def on_toggle_cb_rawData_timeStep(self, obj, data=None):
         state = obj.get_active()
-        # get_obj("so_text_rawData_timeStep_start").set_sensitive(state)
-        get_obj("so_text_rawData_timeStep_interval1").set_sensitive(state)
-        # get_obj("so_text_rawData_timeStep_end").set_sensitive(state)
-        get_obj("so_cb_rawData_timeStep_switch").set_sensitive(state)
+        # self.get_obj("so_text_rawData_timeStep_start").set_sensitive(state)
+        self.get_obj("so_text_rawData_timeStep_interval1").set_sensitive(state)
+        # self.get_obj("so_text_rawData_timeStep_end").set_sensitive(state)
+        self.get_obj("so_cb_rawData_timeStep_switch").set_sensitive(state)
         if not state:
-            get_obj("so_cb_rawData_timeStep_switch").set_active(state)
+            self.get_obj("so_cb_rawData_timeStep_switch").set_active(state)
 
-    @staticmethod
-    def on_toggle_cb_rawData_timeStep_switch(obj, data=None):
+    def on_toggle_cb_rawData_timeStep_switch(self, obj, data=None):
         state = obj.get_active()
-        get_obj("so_text_rawData_timeStep_switch").set_sensitive(state)
-        get_obj("so_text_rawData_timeStep_interval2").set_sensitive(state)
+        self.get_obj("so_text_rawData_timeStep_switch").set_sensitive(state)
+        self.get_obj("so_text_rawData_timeStep_interval2").set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_rawData_physicalTime(obj, data=None):
+    def on_toggle_cb_rawData_physicalTime(self, obj, data=None):
         state = obj.get_active()
-        # get_obj("so_text_rawData_physicalTime_start").set_sensitive(state)
-        get_obj("so_text_rawData_physicalTime_interval1").set_sensitive(state)
-        # get_obj("so_text_rawData_physicalTime_end").set_sensitive(state)
-        get_obj("so_cb_rawData_physicalTime_switch").set_sensitive(state)
+        # self.get_obj("so_text_rawData_physicalTime_start").set_sensitive(state)
+        self.get_obj("so_text_rawData_physicalTime_interval1").set_sensitive(state)
+        # self.get_obj("so_text_rawData_physicalTime_end").set_sensitive(state)
+        self.get_obj("so_cb_rawData_physicalTime_switch").set_sensitive(state)
         if not state:
-            get_obj("so_cb_rawData_physicalTime_switch").set_active(state)
+            self.get_obj("so_cb_rawData_physicalTime_switch").set_active(state)
 
-    @staticmethod
-    def on_toggle_cb_rawData_physicalTime_switch(obj, data=None):
+    def on_toggle_cb_rawData_physicalTime_switch(self, obj, data=None):
         state = obj.get_active()
-        get_obj("so_text_rawData_physicalTime_switch").set_sensitive(state)
-        get_obj("so_text_rawData_physicalTime_interval2").set_sensitive(state)
+        self.get_obj("so_text_rawData_physicalTime_switch").set_sensitive(state)
+        self.get_obj("so_text_rawData_physicalTime_interval2").set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_rawData_binary(obj, data=None):
+    def on_toggle_cb_rawData_binary(self, obj, data=None):
         state = obj.get_active()
         if state and obj.get_label() == "Binary":
-            get_obj("so_cb_rawData_parallelBinary").set_active(False)
+            self.get_obj("so_cb_rawData_parallelBinary").set_active(False)
         elif state and obj.get_label() == "Parallel Binary":
-            get_obj("so_cb_rawData_binary").set_active(False)
+            self.get_obj("so_cb_rawData_binary").set_active(False)
 
-    @staticmethod
-    def on_toggle_cb_rawData_ascii(obj, data=None):
+    def on_toggle_cb_rawData_ascii(self, obj, data=None):
         state = obj.get_active()
         if state and obj.get_label() == "ASCII Dump":
-            get_obj("so_cb_rawData_parallelASCII").set_active(False)
+            self.get_obj("so_cb_rawData_parallelASCII").set_active(False)
         elif state and obj.get_label() == "Parallel ASCII Dump":
-            get_obj("so_cb_rawData_ASCII").set_active(False)
+            self.get_obj("so_cb_rawData_ASCII").set_active(False)
 
-    @staticmethod
-    def on_out_text_rawData_timeStep_switch(obj, data=None):
+    def on_out_text_rawData_timeStep_switch(self, obj, data=None):
         try:
             switchAt = int(obj.get_text())
-            #start = int(get_obj("so_text_rawData_timeStep_start").get_text())
-            #if switchAt <= start:
+            # start = int(get_obj("so_text_rawData_timeStep_start").get_text())
+            # if switchAt <= start:
             #    obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_out_text_rawData_timeStep_end(obj, data=None):
+    def on_out_text_rawData_timeStep_end(self, obj, data=None):
         try:
             end = int(obj.get_text())
-            start = int(get_obj("so_text_rawData_timeStep_start").get_text())
+            start = int(self.get_obj("so_text_rawData_timeStep_start").get_text())
             if end <= start:
                 obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_out_text_rawData_physicalTime_switch(obj, data=None):
+    def on_out_text_rawData_physicalTime_switch(self, obj, data=None):
         try:
             switchAt = int(obj.get_text())
-            #start = int(get_obj("so_text_rawData_timeStep_start").get_text())
-            #if switchAt <= start:
+            # start = int(get_obj("so_text_rawData_timeStep_start").get_text())
+            # if switchAt <= start:
             #   obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_out_text_rawData_physicalTime_end(obj, data=None):
+    def on_out_text_rawData_physicalTime_end(self, obj, data=None):
         try:
             end = int(obj.get_text())
-            start = int(get_obj("so_text_rawData_physicalTime_start").get_text())
+            start = int(self.get_obj("so_text_rawData_physicalTime_start").get_text())
             if end <= start:
                 obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_out_text_formatOutput_timeStep_switch(obj, data=None):
+    def on_out_text_formatOutput_timeStep_switch(self, obj, data=None):
         try:
             switchAt = int(obj.get_text())
-            #start = int(get_obj("so_text_formatOutput_timeStep_start").get_text())
-            #if switchAt <= start:
-             #   obj.set_text("")
+            # start = int(get_obj("so_text_formatOutput_timeStep_start").get_text())
+            # if switchAt <= start:
+            #   obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_out_text_formatOutput_timeStep_end(obj, data=None):
+    def on_out_text_formatOutput_timeStep_end(self, obj, data=None):
         try:
             end = int(obj.get_text())
-            start = int(get_obj("so_text_formatOutput_timeStep_start").get_text())
+            start = int(self.get_obj("so_text_formatOutput_timeStep_start").get_text())
             if end <= start:
                 obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_out_text_formatOutput_physicalTime_switch(obj, data=None):
+    def on_out_text_formatOutput_physicalTime_switch(self, obj, data=None):
         try:
             switchAt = int(obj.get_text())
-            #start = int(get_obj("so_text_formatOutput_timeStep_start").get_text())
-            #if switchAt <= start:
+            # start = int(get_obj("so_text_formatOutput_timeStep_start").get_text())
+            # if switchAt <= start:
             #    obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_out_text_formatOutput_physicalTime_end(obj, data=None):
+    def on_out_text_formatOutput_physicalTime_end(self, obj, data=None):
         try:
             end = int(obj.get_text())
-            start = int(get_obj("so_text_formatOutput_physicalTime_start").get_text())
+            start = int(self.get_obj("so_text_formatOutput_physicalTime_start").get_text())
             if end <= start:
                 obj.set_text("")
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_toggle_rb_screenDump_outputPlane(obj, data=None):
+    def on_toggle_rb_screenDump_outputPlane(self, obj, data=None):
         state = obj.get_active()
         label = obj.get_label()
         if label == "X-Y":
-            get_obj("so_text_screenDump_xy").set_sensitive(state)
+            self.get_obj("so_text_screenDump_xy").set_sensitive(state)
         elif label == "X-Z":
-            get_obj("so_text_screenDump_xz").set_sensitive(state)
+            self.get_obj("so_text_screenDump_xz").set_sensitive(state)
         elif label == "Y-Z":
-            get_obj("so_text_screenDump_yz").set_sensitive(state)
+            self.get_obj("so_text_screenDump_yz").set_sensitive(state)
 
-    @staticmethod
-    def on_out_text_screenDump_outputPlane(obj, data=None):
+    def on_out_text_screenDump_outputPlane(self, obj, data=None):
         try:
             val = float(obj.get_text())
             if val < 0 or val > 1:
@@ -791,39 +712,34 @@ class SolutionOutputHandler:
         except:
             obj.set_text("")
 
-    @staticmethod
-    def on_toggle_cb_mean_velocity(obj, data=None):
+    def on_toggle_cb_mean_velocity(self, obj, data=None):
         state = obj.get_active()
-        get_obj('so_file_meanprofile_u').set_sensitive(state)
-        get_obj('so_file_meanprofile_v').set_sensitive(state)
-        get_obj('so_file_meanprofile_w').set_sensitive(state)
+        self.get_obj('so_file_meanprofile_u').set_sensitive(state)
+        self.get_obj('so_file_meanprofile_v').set_sensitive(state)
+        self.get_obj('so_file_meanprofile_w').set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_mean_temperature(obj, data=None):
+    def on_toggle_cb_mean_temperature(self, obj, data=None):
         state = obj.get_active()
-        get_obj('so_file_meanprofile_phi').set_sensitive(state)
+        self.get_obj('so_file_meanprofile_phi').set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_mean_pressure(obj, data=None):
+    def on_toggle_cb_mean_pressure(self, obj, data=None):
         state = obj.get_active()
-        get_obj('so_file_meanprofile_p').set_sensitive(state)
+        self.get_obj('so_file_meanprofile_p').set_sensitive(state)
 
-    @staticmethod
-    def toggle_outputVariables_state(id, state):
-        grid = get_obj(id)
+    def toggle_outputVariables_state(self, id, state):
+        grid = self.get_obj(id)
         if grid is not None:
             gList = grid.get_children()
             for var in gList:
                 var.set_sensitive(state)
 
-    @staticmethod
-    def on_toggle_cb_formatOutput(obj, data=None):
-        timeStep = get_obj('so_cb_formatOutput_timeStep')
-        phyTime = get_obj('so_cb_formatOutput_physicalTime')
-        if get_obj('so_cb_fileFormat_hdf5').get_active() or get_obj('so_cb_fileFormat_vti').get_active():
+    def on_toggle_cb_formatOutput(self, obj, data=None):
+        timeStep = self.get_obj('so_cb_formatOutput_timeStep')
+        phyTime = self.get_obj('so_cb_formatOutput_physicalTime')
+        if self.get_obj('so_cb_fileFormat_hdf5').get_active() or self.get_obj('so_cb_fileFormat_vti').get_active():
             timeStep.set_sensitive(True)
             phyTime.set_sensitive(True)
-            SolutionOutputHandler.toggle_outputVariables_state('so_grid_formatOutput_outputVariables', True)
+            self.toggle_outputVariables_state('so_grid_formatOutput_outputVariables', True)
         else:
             timeStep.set_active(False)
             timeStep.set_sensitive(False)
@@ -833,17 +749,18 @@ class SolutionOutputHandler:
             phyTime.set_sensitive(False)
             phyTime.emit('toggled')
 
-            SolutionOutputHandler.toggle_outputVariables_state('so_grid_formatOutput_outputVariables', False)
+            self.toggle_outputVariables_state('so_grid_formatOutput_outputVariables', False)
 
-    @staticmethod
-    def on_toggle_cb_rawData(obj, data=None):
-        timeStep = get_obj('so_cb_rawData_timeStep')
-        phyTime = get_obj('so_cb_rawData_physicalTime')
-        if get_obj('so_cb_rawData_binary').get_active() or get_obj('so_cb_rawData_parallelBinary').get_active() \
-                or get_obj('so_cb_rawData_ASCII').get_active() or get_obj('so_cb_rawData_parallelASCII').get_active():
+    def on_toggle_cb_rawData(self, obj, data=None):
+        timeStep = self.get_obj('so_cb_rawData_timeStep')
+        phyTime = self.get_obj('so_cb_rawData_physicalTime')
+        if self.get_obj('so_cb_rawData_binary').get_active() or \
+                self.get_obj('so_cb_rawData_parallelBinary').get_active() or \
+                self.get_obj('so_cb_rawData_ASCII').get_active() or \
+                self.get_obj('so_cb_rawData_parallelASCII').get_active():
             timeStep.set_sensitive(True)
             phyTime.set_sensitive(True)
-            SolutionOutputHandler.toggle_outputVariables_state('so_grid_rawData_outputVariables', True)
+            self.toggle_outputVariables_state('so_grid_rawData_outputVariables', True)
         else:
             timeStep.set_active(False)
             timeStep.set_sensitive(False)
@@ -853,56 +770,161 @@ class SolutionOutputHandler:
             phyTime.set_sensitive(False)
             phyTime.emit('toggled')
 
-            SolutionOutputHandler.toggle_outputVariables_state('so_grid_rawData_outputVariables', False)
+            self.toggle_outputVariables_state('so_grid_rawData_outputVariables', False)
 
-    @staticmethod
-    def on_toggle_rb_order(obj, data=None):
+    def on_toggle_rb_order(self, obj, data=None):
         if obj.get_active() and obj.get_label() == 'Higher Order Statistics':
-            get_obj('so_cb_stats_d').set_sensitive(True)
-            get_obj('so_cb_stats_s').set_sensitive(True)
-            get_obj('so_cb_stats_i').set_sensitive(True)
+            self.get_obj('so_cb_stats_d').set_sensitive(True)
+            self.get_obj('so_cb_stats_s').set_sensitive(True)
+            self.get_obj('so_cb_stats_i').set_sensitive(True)
         else:
-            get_obj('so_cb_stats_d').set_sensitive(False)
-            get_obj('so_cb_stats_s').set_sensitive(False)
-            get_obj('so_cb_stats_i').set_sensitive(False)
+            self.get_obj('so_cb_stats_d').set_sensitive(False)
+            self.get_obj('so_cb_stats_s').set_sensitive(False)
+            self.get_obj('so_cb_stats_i').set_sensitive(False)
+
+
+class TurbulenceModelHandler:
+    def on_changed_distanceFieldOption(self, obj, data=None):
+
+        # Distance Field = Read from file
+        id = obj.get_active_id()
+        if id == '0':
+            # Turbulence Model Window
+            self.get_obj('tm_file_distanceField').show()
+            self.get_obj('tm_box_distanceField').hide()
+            # Geometry Window
+            self.get_obj('geom_file_distanceField').show()
+            self.get_obj('geom_box_distanceField').hide()
+        elif id == '1':
+            # Turbulence Model Window
+            self.get_obj('tm_file_distanceField').hide()
+            self.get_obj('tm_box_distanceField').show()
+            # Geometry Window
+            self.get_obj('geom_file_distanceField').hide()
+            self.get_obj('geom_box_distanceField').show()
+        else:
+            # Turbulence Model Window
+            self.get_obj('tm_file_distanceField').hide()
+            self.get_obj('tm_box_distanceField').hide()
+            # Geometry Window
+            self.get_obj('geom_file_distanceField').hide()
+            self.get_obj('geom_box_distanceField').hide()
+
+        # set distance field option same everywhere
+        obj_changed = Gtk.Buildable.get_name(obj)
+        obj_toChange = None
+        if obj_changed.startswith('geom'):
+            obj_toChange = self.get_obj('tm_list_distanceField')
+        else:
+            obj_toChange = self.get_obj('geom_list_distanceField')
+
+        if id != obj_toChange.get_active_id():
+            obj_toChange.set_active_id(id)
+
+    def on_fileSet_distanceField(self, obj, data=None):
+        filename = obj.get_filename()
+        obj_set = Gtk.Buildable.get_name(obj)
+        obj_toSet = None
+        if obj_set.startswith('geom'):
+            obj_toSet = self.get_obj('tm_file_distanceField')
+        else:
+            obj_toSet = self.get_obj('geom_file_distanceField')
+
+        if filename != obj_toSet.get_filename():
+            obj_toSet.set_filename(filename)
+
+    def on_clicked_rb_distanceField(self, obj, data=None):
+        if not obj.get_active():
+            return
+
+        obj_selected = Gtk.Buildable.get_name(obj)
+        obj_toSelect = None
+
+        if obj_selected.startswith('geom'):
+            obj_toSelect = self.get_obj(obj_selected.replace('geom', 'tm'))
+        else:
+            obj_toSelect = self.get_obj(obj_selected.replace('tm', 'geom'))
+
+        if not obj_toSelect.get_active():
+            obj_toSelect.set_active(True)
+
 
 class Handler(WindowHandler, FileMenuHandler, MainParametersHandler, BoundaryConditionsHandler,
-              InitialConditionsHandler, FlowSolverParametersHandler, SolutionOutputHandler):
-    gtkBuilder = None
-    gtkConfigWindow = None
-
+              InitialConditionsHandler, FlowSolverParametersHandler, SolutionOutputHandler,
+              TurbulenceModelHandler):
     def __init__(self, builder):
-        Handler.gtkBuilder = builder
-        Handler.gtkConfigWindow = builder.get_object('MainWindow')
+        self.gtkBuilder = builder
+        self.gtkConfigWindow = builder.get_object('MainWindow')
 
-    @staticmethod
-    def is_int_positive(obj, event):
+    # ------------ Helper Functions ---------------
+
+    def isInt(self, data):
+        try:
+            value = int(data)
+            return True
+        except ValueError:
+            pass
+        return False
+
+    def isFloat(self, data):
+        try:
+            value = float(eval(str(data)))
+            return True
+        except:
+            pass
+        return False
+
+    def isPositive(self, data):
+        try:
+            value = eval(str(data))
+            if value < 0:
+                raise ValueError('Negative value')
+            return True
+        except:
+            pass
+        return False
+
+    def text(self, obj_id, evaluate=False):
+        obj = self.gtkBuilder.get_object(obj_id)
+        if obj is not None:
+            if isinstance(obj, Gtk.ComboBoxText):
+                return obj.get_active_id()
+            else:
+                val = obj.get_text()
+                if val != '' and evaluate:
+                    return str(eval(val))
+                return val
+        return ''
+
+    def get_obj(self, obj_id):
+        return self.gtkBuilder.get_object(obj_id)
+
+    # ---------------------------------------------
+
+    def is_int_positive(self, obj, event):
         data = obj.get_text()
         if len(data) < 1:
             return
-        if not isInt(data) or not isPositive(data):
+        if not self.isInt(data) or not self.isPositive(data):
             obj.set_text('')
 
-    @staticmethod
-    def is_float_positive(obj, event):
+    def is_float_positive(self, obj, event):
         data = obj.get_text()
         if len(data) < 1:
             return
-        if not isFloat(data) or not isPositive(data):
+        if not self.isFloat(data) or not self.isPositive(data):
             obj.set_text('')
 
-    @staticmethod
-    def is_int(obj, event):
+    def is_int(self, obj, event):
         data = obj.get_text()
         if len(data) < 1:
             return
-        if not isInt(data):
+        if not self.isInt(data):
             obj.set_text('')
 
-    @staticmethod
-    def is_float(obj, event):
+    def is_float(self, obj, event):
         data = obj.get_text()
         if len(data) < 1:
             return
-        if not isFloat(data):
+        if not self.isFloat(data):
             obj.set_text('')
