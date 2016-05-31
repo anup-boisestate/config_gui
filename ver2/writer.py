@@ -565,8 +565,23 @@ class GIN3DConfigWriter:
         try:
             fp = open(filename.replace('.cfg', '') + ".cfg", "w")
 
+            fp.write("################################################################################\n")
+            fp.write("# Parameters to control the model input/output\n")
+            fp.write("# Generated from GIN3D Configuration GUI\n")
+            fp.write("################################################################################\n")
+            fp.write("\n")
+            fp.write("# The # comments out the line.  If a parameter is commented, its value is set to\n")
+            fp.write("# zero.\n")
+            fp.write("# NOTE: The density is considered 1.0 for all simulations.\n")
+            fp.write("\n")
+
             # Main Parameters
             cnfg_main = self.cnfg["Main"]
+
+            fp.write("#-------------------------------------------------------------------------------\n")
+            fp.write("#                          Main Parameters\n")
+            fp.write("#-------------------------------------------------------------------------------\n")
+            fp.write("\n")
 
             # Item 1
             fp.write("# Physical domain size, requires three floating point arguments after\n")
@@ -601,21 +616,24 @@ class GIN3DConfigWriter:
 
             # Item 6
             # do nothing, will use TurbulenceModel tag later to choose model
+            # for testing
+            fp.write("Turbulence   " + str(cnfg_main['Turbulence']) + "\n")
+            fp.write("\n")
 
             # Item 7
             fp.write("# Whether or not to solve for and output temperature\n")
-            fp.write("Temperature   " + str(cnfg_main['Temperature']))
-            fp.write("\n\n")
+            fp.write("Temperature   " + str(cnfg_main['Temperature']) + "\n")
+            fp.write("\n")
 
             # Item 8
             # Don't do anything for this one yet
             # for testing
-            fp.write("Turbulence   " + str(cnfg_main['Turbulence']) + "\n")
+            fp.write("SolidGeometry   " + str(cnfg_main['SolidGeometry']) + "\n")
+            fp.write("\n")
 
             # Item 9
             # Do nothing
-            # for testing
-            fp.write("SolidGeometry   " + str(cnfg_main['SolidGeometry']) + "\n")
+
 
             # Item 10
             if self.forcing == "constPresGrad":

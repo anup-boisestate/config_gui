@@ -2,6 +2,30 @@
 <!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.10"/>
+  <object class="GtkFileFilter" id="CSVFileFilter">
+    <mime-types>
+      <mime-type>csv</mime-type>
+    </mime-types>
+    <patterns>
+      <pattern>*.csv</pattern>
+    </patterns>
+  </object>
+  <object class="GtkFileFilter" id="DistanceFieldFileFilter">
+    <mime-types>
+      <mime-type>DAT files</mime-type>
+    </mime-types>
+    <patterns>
+      <pattern>*.dat</pattern>
+    </patterns>
+  </object>
+  <object class="GtkFileFilter" id="IBMetaFileFilter">
+    <mime-types>
+      <mime-type>IB Files</mime-type>
+    </mime-types>
+    <patterns>
+      <pattern>*.ibmeta</pattern>
+    </patterns>
+  </object>
   <object class="GtkTextBuffer" id="ic_buffer_specialCases_detail">
     <property name="text" translatable="yes">Note: theta determined from InletVelocity u and v components
 u = u_tau/kappa * log(z/z_not) * cos(theta)
@@ -42,6 +66,7 @@ w = 0.0</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_filemenu_new_activate" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -58,6 +83,7 @@ w = 0.0</property>
                       <object class="GtkImageMenuItem" id="filemenu_save">
                         <property name="label">gtk-save</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
@@ -151,11 +177,7 @@ w = 0.0</property>
                           <object class="GtkImage" id="image1">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="margin_left">4</property>
-                            <property name="margin_right">4</property>
-                            <property name="margin_top">4</property>
-                            <property name="hexpand">True</property>
-                            <property name="pixbuf">logo.jpg</property>
+                            <property name="pixbuf">logo.png</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -609,6 +631,7 @@ w = 0.0</property>
                                 <property name="caps_lock_warning">False</property>
                                 <property name="input_purpose">number</property>
                                 <signal name="focus-out-event" handler="is_float_positive" swapped="no"/>
+                                <signal name="focus-out-event" handler="on_out_copy_refLength_to_geom" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -770,6 +793,8 @@ w = 0.0</property>
                                 <property name="can_focus">True</property>
                                 <property name="halign">start</property>
                                 <property name="valign">center</property>
+                                <property name="active">True</property>
+                                <property name="state">True</property>
                                 <signal name="button-release-event" handler="on_simParam_switch_turbulence_toggle" swapped="no"/>
                               </object>
                               <packing>
@@ -783,6 +808,8 @@ w = 0.0</property>
                                 <property name="can_focus">True</property>
                                 <property name="halign">start</property>
                                 <property name="valign">center</property>
+                                <property name="active">True</property>
+                                <property name="state">True</property>
                                 <signal name="button-release-event" handler="on_simParam_switch_temperature_toggle" swapped="no"/>
                               </object>
                               <packing>
@@ -796,6 +823,8 @@ w = 0.0</property>
                                 <property name="can_focus">True</property>
                                 <property name="halign">start</property>
                                 <property name="valign">center</property>
+                                <property name="active">True</property>
+                                <property name="state">True</property>
                                 <signal name="button-release-event" handler="on_simParam_switch_geometry_toggle" swapped="no"/>
                               </object>
                               <packing>
@@ -2980,29 +3009,6 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="txtLabel53">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="halign">end</property>
-                                <property name="valign">center</property>
-                                <property name="xpad">2</property>
-                                <property name="ypad">4</property>
-                                <property name="label" translatable="yes">Temperature</property>
-                                <property name="justify">right</property>
-                                <property name="lines">1</property>
-                                <attributes>
-                                  <attribute name="font-desc" value="URW Gothic L Book 11"/>
-                                  <attribute name="style" value="normal"/>
-                                  <attribute name="weight" value="bold"/>
-                                  <attribute name="foreground" value="#2e2e34343636"/>
-                                </attributes>
-                              </object>
-                              <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkLabel" id="txtLabel54">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -3177,65 +3183,6 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkRadioButton" id="fsp_rb_temperature_cds">
-                                <property name="label" translatable="yes">
-</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
-                                <property name="halign">center</property>
-                                <property name="valign">center</property>
-                                <property name="xalign">0</property>
-                                <property name="active">True</property>
-                                <property name="draw_indicator">True</property>
-                                <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkRadioButton" id="fsp_rb_temperature_quick">
-                                <property name="label" translatable="yes">
-</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
-                                <property name="halign">center</property>
-                                <property name="valign">center</property>
-                                <property name="xalign">0</property>
-                                <property name="active">True</property>
-                                <property name="draw_indicator">True</property>
-                                <property name="group">fsp_rb_temperature_cds</property>
-                                <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="left_attach">3</property>
-                                <property name="top_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkRadioButton" id="fsp_rb_temperature_fou">
-                                <property name="label" translatable="yes">
-</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
-                                <property name="halign">center</property>
-                                <property name="valign">center</property>
-                                <property name="xalign">0</property>
-                                <property name="active">True</property>
-                                <property name="draw_indicator">True</property>
-                                <property name="group">fsp_rb_temperature_cds</property>
-                                <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkGrid" id="grid10">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -3290,60 +3237,6 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkGrid" id="grid16">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="margin_left">4</property>
-                                <property name="margin_right">4</property>
-                                <property name="margin_top">4</property>
-                                <property name="margin_bottom">4</property>
-                                <property name="row_spacing">2</property>
-                                <property name="column_spacing">2</property>
-                                <child>
-                                  <object class="GtkRadioButton" id="fsp_rb_temperature_kappa">
-                                    <property name="label" translatable="yes">
-</property>
-                                    <property name="visible">True</property>
-                                    <property name="sensitive">False</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">False</property>
-                                    <property name="halign">center</property>
-                                    <property name="valign">center</property>
-                                    <property name="xalign">0</property>
-                                    <property name="draw_indicator">True</property>
-                                    <property name="group">fsp_rb_temperature_cds</property>
-                                    <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">0</property>
-                                    <property name="top_attach">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkEntry" id="fsp_text_temperature_kappa">
-                                    <property name="visible">True</property>
-                                    <property name="sensitive">False</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="halign">start</property>
-                                    <property name="valign">center</property>
-                                    <property name="margin_bottom">3</property>
-                                    <property name="width_chars">5</property>
-                                    <property name="caps_lock_warning">False</property>
-                                    <property name="input_purpose">number</property>
-                                    <signal name="focus-out-event" handler="is_float" swapped="no"/>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="top_attach">0</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left_attach">4</property>
-                                <property name="top_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkGrid" id="grid17">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -3394,59 +3287,6 @@ w = 0.0</property>
                               <packing>
                                 <property name="left_attach">5</property>
                                 <property name="top_attach">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkGrid" id="grid18">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="margin_left">4</property>
-                                <property name="margin_right">4</property>
-                                <property name="margin_top">4</property>
-                                <property name="margin_bottom">4</property>
-                                <property name="row_spacing">2</property>
-                                <property name="column_spacing">2</property>
-                                <child>
-                                  <object class="GtkRadioButton" id="fsp_rb_temperature_hybrid">
-                                    <property name="label" translatable="yes">
-</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">False</property>
-                                    <property name="halign">center</property>
-                                    <property name="valign">center</property>
-                                    <property name="xalign">0</property>
-                                    <property name="draw_indicator">True</property>
-                                    <property name="group">fsp_rb_temperature_cds</property>
-                                    <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">0</property>
-                                    <property name="top_attach">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkEntry" id="fsp_text_temperature_hybrid">
-                                    <property name="visible">True</property>
-                                    <property name="sensitive">False</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="halign">start</property>
-                                    <property name="valign">center</property>
-                                    <property name="margin_bottom">3</property>
-                                    <property name="width_chars">5</property>
-                                    <property name="caps_lock_warning">False</property>
-                                    <property name="input_purpose">number</property>
-                                    <signal name="focus-out-event" handler="on_entry_out_hybridLimit" swapped="no"/>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="top_attach">0</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left_attach">5</property>
-                                <property name="top_attach">2</property>
                               </packing>
                             </child>
                           </object>
@@ -4688,7 +4528,7 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkRadioButton" id="fsp_rb_temperature_cds1">
+                              <object class="GtkRadioButton" id="fsp_rb_temperature_cds">
                                 <property name="label" translatable="yes">
 </property>
                                 <property name="visible">True</property>
@@ -4699,6 +4539,7 @@ w = 0.0</property>
                                 <property name="xalign">0</property>
                                 <property name="active">True</property>
                                 <property name="draw_indicator">True</property>
+                                <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -4706,7 +4547,7 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkRadioButton" id="fsp_rb_temperature_quick1">
+                              <object class="GtkRadioButton" id="fsp_rb_temperature_quick">
                                 <property name="label" translatable="yes">
 </property>
                                 <property name="visible">True</property>
@@ -4717,6 +4558,7 @@ w = 0.0</property>
                                 <property name="xalign">0</property>
                                 <property name="draw_indicator">True</property>
                                 <property name="group">fsp_rb_temperature_cds</property>
+                                <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -4724,7 +4566,7 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkRadioButton" id="fsp_rb_temperature_fou1">
+                              <object class="GtkRadioButton" id="fsp_rb_temperature_fou">
                                 <property name="label" translatable="yes">
 </property>
                                 <property name="visible">True</property>
@@ -4735,6 +4577,7 @@ w = 0.0</property>
                                 <property name="xalign">0</property>
                                 <property name="draw_indicator">True</property>
                                 <property name="group">fsp_rb_temperature_cds</property>
+                                <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">2</property>
@@ -4750,7 +4593,7 @@ w = 0.0</property>
                                 <property name="row_spacing">2</property>
                                 <property name="column_spacing">2</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="fsp_rb_temperature_kappa1">
+                                  <object class="GtkRadioButton" id="fsp_rb_temperature_kappa">
                                     <property name="label" translatable="yes">
 </property>
                                     <property name="visible">True</property>
@@ -4762,6 +4605,7 @@ w = 0.0</property>
                                     <property name="xalign">0</property>
                                     <property name="draw_indicator">True</property>
                                     <property name="group">fsp_rb_temperature_cds</property>
+                                    <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -4769,7 +4613,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEntry" id="fsp_text_temperature_kappa1">
+                                  <object class="GtkEntry" id="fsp_text_temperature_kappa">
                                     <property name="visible">True</property>
                                     <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
@@ -4779,6 +4623,7 @@ w = 0.0</property>
                                     <property name="width_chars">5</property>
                                     <property name="caps_lock_warning">False</property>
                                     <property name="input_purpose">number</property>
+                                    <signal name="focus-out-event" handler="is_float" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -4800,7 +4645,7 @@ w = 0.0</property>
                                 <property name="row_spacing">2</property>
                                 <property name="column_spacing">2</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="fsp_rb_temperature_hybrid1">
+                                  <object class="GtkRadioButton" id="fsp_rb_temperature_hybrid">
                                     <property name="label" translatable="yes">
 </property>
                                     <property name="visible">True</property>
@@ -4811,6 +4656,7 @@ w = 0.0</property>
                                     <property name="xalign">0</property>
                                     <property name="draw_indicator">True</property>
                                     <property name="group">fsp_rb_temperature_cds</property>
+                                    <signal name="toggled" handler="on_toggled_rb_temperature" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -4818,7 +4664,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEntry" id="fsp_text_temperature_hybrid1">
+                                  <object class="GtkEntry" id="fsp_text_temperature_hybrid">
                                     <property name="visible">True</property>
                                     <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
@@ -4828,6 +4674,7 @@ w = 0.0</property>
                                     <property name="width_chars">5</property>
                                     <property name="caps_lock_warning">False</property>
                                     <property name="input_purpose">number</property>
+                                    <signal name="focus-out-event" handler="on_entry_out_hybridLimit" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -4899,7 +4746,7 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry" id="temp_text_soruceMagnitude">
+                              <object class="GtkEntry" id="temp_text_sourceMagnitude">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="tooltip_text" translatable="yes">no limits float</property>
@@ -4990,7 +4837,7 @@ w = 0.0</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <child>
-                                  <object class="GtkEntry" id="ic_uniform_u8">
+                                  <object class="GtkEntry" id="temp_text_gravity_x">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="tooltip_text" translatable="yes">no limits float</property>
@@ -4998,8 +4845,10 @@ w = 0.0</property>
                                     <property name="valign">center</property>
                                     <property name="margin_bottom">3</property>
                                     <property name="width_chars">10</property>
+                                    <property name="text" translatable="yes">0</property>
                                     <property name="caps_lock_warning">False</property>
                                     <property name="input_purpose">number</property>
+                                    <signal name="focus-out-event" handler="is_float" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -5007,7 +4856,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEntry" id="ic_uniform_u9">
+                                  <object class="GtkEntry" id="temp_text_gravity_y">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="tooltip_text" translatable="yes">no limits float</property>
@@ -5015,8 +4864,10 @@ w = 0.0</property>
                                     <property name="valign">center</property>
                                     <property name="margin_bottom">3</property>
                                     <property name="width_chars">10</property>
+                                    <property name="text" translatable="yes">0</property>
                                     <property name="caps_lock_warning">False</property>
                                     <property name="input_purpose">number</property>
+                                    <signal name="focus-out-event" handler="is_float" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -5024,7 +4875,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEntry" id="ic_uniform_u10">
+                                  <object class="GtkEntry" id="temp_text_gravity_z">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="tooltip_text" translatable="yes">no limits float</property>
@@ -5032,8 +4883,10 @@ w = 0.0</property>
                                     <property name="valign">center</property>
                                     <property name="margin_bottom">3</property>
                                     <property name="width_chars">10</property>
+                                    <property name="text" translatable="yes">-9.81</property>
                                     <property name="caps_lock_warning">False</property>
                                     <property name="input_purpose">number</property>
+                                    <signal name="focus-out-event" handler="is_float" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">2</property>
@@ -5106,7 +4959,7 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry" id="ic_uniform_u13">
+                              <object class="GtkEntry" id="temp_text_prandtlNumber">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="tooltip_text" translatable="yes">positive float</property>
@@ -5116,6 +4969,7 @@ w = 0.0</property>
                                 <property name="width_chars">10</property>
                                 <property name="caps_lock_warning">False</property>
                                 <property name="input_purpose">number</property>
+                                <signal name="focus-out-event" handler="is_float" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5146,7 +5000,7 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry" id="ic_uniform_u14">
+                              <object class="GtkEntry" id="temp_text_refTemperature">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="tooltip_text" translatable="yes">positive float</property>
@@ -5156,6 +5010,7 @@ w = 0.0</property>
                                 <property name="width_chars">10</property>
                                 <property name="caps_lock_warning">False</property>
                                 <property name="input_purpose">number</property>
+                                <signal name="focus-out-event" handler="is_float" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5252,7 +5107,7 @@ w = 0.0</property>
                                 <property name="margin_top">4</property>
                                 <property name="margin_bottom">4</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="radiobutton1">
+                                  <object class="GtkRadioButton" id="tm_rb_originalSmagorinsky">
                                     <property name="label" translatable="yes">Original Smagorinsky</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -5267,7 +5122,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkRadioButton" id="radiobutton2">
+                                  <object class="GtkRadioButton" id="tm_rb_lagrangianDynamicSmagorinsky">
                                     <property name="label" translatable="yes">Lagrangian Dynamic Smagorinsky</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -5275,7 +5130,7 @@ w = 0.0</property>
                                     <property name="xalign">0</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">radiobutton1</property>
+                                    <property name="group">tm_rb_originalSmagorinsky</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -5339,7 +5194,7 @@ w = 0.0</property>
                                 <property name="margin_top">4</property>
                                 <property name="margin_bottom">4</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="radiobutton3">
+                                  <object class="GtkRadioButton" id="tm_rb_prandtlSmagorinsky">
                                     <property name="label" translatable="yes">Prandtl-Smagorinsky</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -5347,7 +5202,7 @@ w = 0.0</property>
                                     <property name="xalign">0</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">radiobutton1</property>
+                                    <property name="group">tm_rb_originalSmagorinsky</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -5355,7 +5210,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkRadioButton" id="radiobutton4">
+                                  <object class="GtkRadioButton" id="tm_rb_prandtlLagrangianDynamicSmagorinsky">
                                     <property name="label" translatable="yes">Prandtl-Lagrangian Dynamic Smagorinsky</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -5363,7 +5218,7 @@ w = 0.0</property>
                                     <property name="xalign">0</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">radiobutton1</property>
+                                    <property name="group">tm_rb_originalSmagorinsky</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -5373,6 +5228,7 @@ w = 0.0</property>
                                 <child>
                                   <object class="GtkComboBoxText" id="comboboxtext5">
                                     <property name="visible">True</property>
+                                    <property name="sensitive">False</property>
                                     <property name="can_focus">False</property>
                                     <property name="active_id">0</property>
                                     <items>
@@ -5391,6 +5247,7 @@ w = 0.0</property>
                                 <child>
                                   <object class="GtkComboBoxText" id="comboboxtext4">
                                     <property name="visible">True</property>
+                                    <property name="sensitive">False</property>
                                     <property name="can_focus">False</property>
                                     <property name="active_id">0</property>
                                     <items>
@@ -5504,7 +5361,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEntry" id="simParam_txtbox_lx4">
+                                  <object class="GtkEntry" id="tm_text_smagorinskyCoefficient">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="tooltip_text" translatable="yes">0.03 &lt; sc &lt; 0.5</property>
@@ -5515,6 +5372,7 @@ w = 0.0</property>
                                     <property name="width_chars">10</property>
                                     <property name="caps_lock_warning">False</property>
                                     <property name="input_purpose">number</property>
+                                    <signal name="focus-out-event" handler="is_float_positive" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -5522,7 +5380,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEntry" id="simParam_txtbox_lx5">
+                                  <object class="GtkEntry" id="tm_text_blendingHeight">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="tooltip_text" translatable="yes">h &gt; 0</property>
@@ -5541,43 +5399,153 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="txtLabel89">
+                                  <object class="GtkBox" id="tm_box_distanceField">
+                                    <property name="can_focus">False</property>
+                                    <property name="margin_left">35</property>
+                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">2</property>
+                                    <child>
+                                      <object class="GtkLabel" id="label17">
+                                        <property name="can_focus">False</property>
+                                        <property name="halign">start</property>
+                                        <property name="valign">center</property>
+                                        <property name="label" translatable="yes">Select geometry:</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkGrid" id="grid16">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="margin_top">4</property>
+                                        <property name="margin_bottom">4</property>
+                                        <child>
+                                          <object class="GtkRadioButton" id="tm_rb_channel_x">
+                                            <property name="label" translatable="yes">Channel: x-dir wall-normal</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">False</property>
+                                            <property name="xalign">0</property>
+                                            <property name="active">True</property>
+                                            <property name="draw_indicator">True</property>
+                                            <signal name="toggled" handler="on_clicked_rb_distanceField" swapped="no"/>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">0</property>
+                                            <property name="top_attach">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkRadioButton" id="tm_rb_channel_y">
+                                            <property name="label" translatable="yes">Channel: y-dir wall-normal</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">False</property>
+                                            <property name="xalign">0</property>
+                                            <property name="draw_indicator">True</property>
+                                            <property name="group">tm_rb_channel_x</property>
+                                            <signal name="toggled" handler="on_clicked_rb_distanceField" swapped="no"/>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">0</property>
+                                            <property name="top_attach">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkRadioButton" id="tm_rb_channel_z">
+                                            <property name="label" translatable="yes">Channel: z-dir wall-normal</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">False</property>
+                                            <property name="xalign">0</property>
+                                            <property name="draw_indicator">True</property>
+                                            <property name="group">tm_rb_channel_x</property>
+                                            <signal name="toggled" handler="on_clicked_rb_distanceField" swapped="no"/>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">0</property>
+                                            <property name="top_attach">2</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">0</property>
+                                    <property name="top_attach">3</property>
+                                    <property name="width">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkGrid" id="grid18">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="halign">start</property>
-                                    <property name="valign">center</property>
-                                    <property name="xpad">2</property>
-                                    <property name="ypad">4</property>
-                                    <property name="label" translatable="yes">Distance Field</property>
-                                    <property name="justify">right</property>
-                                    <property name="lines">1</property>
-                                    <attributes>
-                                      <attribute name="font-desc" value="URW Gothic L Book 11"/>
-                                      <attribute name="style" value="normal"/>
-                                      <attribute name="weight" value="bold"/>
-                                      <attribute name="foreground" value="#2e2e34343636"/>
-                                    </attributes>
+                                    <child>
+                                      <object class="GtkComboBoxText" id="tm_list_distanceField">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Select distance field file under Geometry section</property>
+                                        <property name="active_id">-1</property>
+                                        <items>
+                                          <item id="-1" translatable="yes">Select option ...</item>
+                                          <item id="0" translatable="yes">Read from File</item>
+                                          <item id="1" translatable="yes">Compute Internally</item>
+                                        </items>
+                                        <signal name="changed" handler="on_changed_distanceFieldOption" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="top_attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="txtLabel53">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="halign">start</property>
+                                        <property name="valign">center</property>
+                                        <property name="xpad">2</property>
+                                        <property name="ypad">4</property>
+                                        <property name="label" translatable="yes">Distance Field</property>
+                                        <property name="justify">right</property>
+                                        <property name="lines">1</property>
+                                        <attributes>
+                                          <attribute name="font-desc" value="URW Gothic L Book 11"/>
+                                          <attribute name="style" value="normal"/>
+                                          <attribute name="weight" value="bold"/>
+                                          <attribute name="foreground" value="#2e2e34343636"/>
+                                        </attributes>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">0</property>
+                                        <property name="top_attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkFileChooserButton" id="tm_file_distanceField">
+                                        <property name="can_focus">False</property>
+                                        <property name="filter">DistanceFieldFileFilter</property>
+                                        <signal name="file-set" handler="on_fileSet_distanceField" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">2</property>
+                                        <property name="top_attach">0</property>
+                                      </packing>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">2</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkComboBoxText" id="comboboxtext6">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="tooltip_text" translatable="yes">Select distance field file under Geometry section</property>
-                                    <property name="active_id">-1</property>
-                                    <items>
-                                      <item id="-1" translatable="yes">Select option ...</item>
-                                      <item id="0" translatable="yes">Read from File</item>
-                                      <item id="1" translatable="yes">Compute Internally</item>
-                                    </items>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="top_attach">2</property>
+                                    <property name="width">2</property>
                                   </packing>
                                 </child>
                               </object>
@@ -5586,6 +5554,9 @@ w = 0.0</property>
                                 <property name="fill">True</property>
                                 <property name="position">1</property>
                               </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                           </object>
                           <packing>
@@ -5673,12 +5644,12 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkFileChooserButton" id="so_folderChooser_outputPath6">
+                              <object class="GtkFileChooserButton" id="geom_file_ibfiles">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="tooltip_text" translatable="yes">filter for files with *.ibmeta ()</property>
-                                <property name="action">select-folder</property>
-                                <property name="title" translatable="yes">Select a Folder</property>
+                                <property name="filter">IBMetaFileFilter</property>
+                                <property name="title" translatable="yes">Open...</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5744,7 +5715,7 @@ w = 0.0</property>
                                 <property name="row_spacing">2</property>
                                 <property name="column_spacing">4</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="radiobutton7">
+                                  <object class="GtkRadioButton" id="geom_rb_ib_linear">
                                     <property name="label" translatable="yes">Linear</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -5759,7 +5730,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkRadioButton" id="radiobutton8">
+                                  <object class="GtkRadioButton" id="geom_rb_ib_roughLogLaw">
                                     <property name="label" translatable="yes">Rough Log-Law</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -5767,7 +5738,7 @@ w = 0.0</property>
                                     <property name="xalign">0</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">radiobutton7</property>
+                                    <property name="group">geom_rb_ib_linear</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -5775,7 +5746,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkRadioButton" id="radiobutton9">
+                                  <object class="GtkRadioButton" id="geom_rb_ib_powerLaw">
                                     <property name="label" translatable="yes">Power Law</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -5783,7 +5754,7 @@ w = 0.0</property>
                                     <property name="xalign">0</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">radiobutton7</property>
+                                    <property name="group">geom_rb_ib_linear</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -5794,12 +5765,13 @@ w = 0.0</property>
                                   <object class="GtkRadioButton" id="radiobutton10">
                                     <property name="label" translatable="yes">Parabolic</property>
                                     <property name="visible">True</property>
+                                    <property name="sensitive">False</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="xalign">0</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">radiobutton7</property>
+                                    <property name="group">geom_rb_ib_linear</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -5826,7 +5798,7 @@ w = 0.0</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkEntry" id="simParam_txtbox_lx6">
+                                      <object class="GtkEntry" id="geom_text_roughness">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="tooltip_text" translatable="yes">positive float</property>
@@ -5837,6 +5809,7 @@ w = 0.0</property>
                                         <property name="width_chars">10</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
+                                        <signal name="focus-out-event" handler="is_float_positive" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -5891,7 +5864,7 @@ w = 0.0</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkEntry" id="so_text_formatOutput_timeStep_start1">
+                                      <object class="GtkEntry" id="geom_text_powerLaw_refLength">
                                         <property name="visible">True</property>
                                         <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
@@ -5901,6 +5874,7 @@ w = 0.0</property>
                                         <property name="width_chars">6</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
+                                        <signal name="focus-out-event" handler="is_float_positive" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -5916,6 +5890,7 @@ w = 0.0</property>
                                         <property name="valign">center</property>
                                         <property name="margin_bottom">3</property>
                                         <property name="width_chars">6</property>
+                                        <property name="text" translatable="yes">1/7</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
                                       </object>
@@ -5941,6 +5916,7 @@ w = 0.0</property>
                                     <child>
                                       <object class="GtkEntry" id="simParam_txtbox_lx9">
                                         <property name="visible">True</property>
+                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="tooltip_text" translatable="yes">positive float</property>
                                         <property name="halign">start</property>
@@ -5970,6 +5946,7 @@ w = 0.0</property>
                                     <child>
                                       <object class="GtkEntry" id="simParam_txtbox_lx10">
                                         <property name="visible">True</property>
+                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="tooltip_text" translatable="yes">positive float</property>
                                         <property name="halign">start</property>
@@ -6014,12 +5991,13 @@ w = 0.0</property>
                               <object class="GtkGrid" id="grid47">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="halign">start</property>
                                 <property name="margin_left">4</property>
                                 <property name="margin_right">4</property>
                                 <property name="margin_top">4</property>
                                 <property name="margin_bottom">4</property>
                                 <child>
-                                  <object class="GtkComboBoxText" id="comboboxtext7">
+                                  <object class="GtkComboBoxText" id="geom_list_distanceField">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="tooltip_text" translatable="yes">Select distance field file under Geometry section</property>
@@ -6029,6 +6007,7 @@ w = 0.0</property>
                                       <item id="0" translatable="yes">Read from File</item>
                                       <item id="1" translatable="yes">Compute Internally</item>
                                     </items>
+                                    <signal name="changed" handler="on_changed_distanceFieldOption" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -6059,6 +6038,17 @@ w = 0.0</property>
                                     <property name="top_attach">0</property>
                                   </packing>
                                 </child>
+                                <child>
+                                  <object class="GtkFileChooserButton" id="geom_file_distanceField">
+                                    <property name="can_focus">False</property>
+                                    <property name="filter">DistanceFieldFileFilter</property>
+                                    <signal name="file-set" handler="on_fileSet_distanceField" swapped="no"/>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">2</property>
+                                    <property name="top_attach">0</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -6067,8 +6057,7 @@ w = 0.0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkBox" id="box32">
-                                <property name="visible">True</property>
+                              <object class="GtkBox" id="geom_box_distanceField">
                                 <property name="can_focus">False</property>
                                 <property name="margin_left">35</property>
                                 <property name="orientation">vertical</property>
@@ -6089,7 +6078,7 @@ w = 0.0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkGrid" id="grid48">
+                                  <object class="GtkGrid" id="geom_grid_distanceField">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="margin_left">35</property>
@@ -6097,7 +6086,7 @@ w = 0.0</property>
                                     <property name="margin_top">4</property>
                                     <property name="margin_bottom">4</property>
                                     <child>
-                                      <object class="GtkRadioButton" id="radiobutton11">
+                                      <object class="GtkRadioButton" id="geom_rb_channel_x">
                                         <property name="label" translatable="yes">Channel: x-dir wall-normal</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
@@ -6105,6 +6094,7 @@ w = 0.0</property>
                                         <property name="xalign">0</property>
                                         <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
+                                        <signal name="toggled" handler="on_clicked_rb_distanceField" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -6112,7 +6102,7 @@ w = 0.0</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkRadioButton" id="radiobutton12">
+                                      <object class="GtkRadioButton" id="geom_rb_channel_y">
                                         <property name="label" translatable="yes">Channel: y-dir wall-normal</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
@@ -6120,7 +6110,8 @@ w = 0.0</property>
                                         <property name="xalign">0</property>
                                         <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <property name="group">radiobutton11</property>
+                                        <property name="group">geom_rb_channel_x</property>
+                                        <signal name="toggled" handler="on_clicked_rb_distanceField" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -6128,7 +6119,7 @@ w = 0.0</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkRadioButton" id="radiobutton13">
+                                      <object class="GtkRadioButton" id="geom_rb_channel_z">
                                         <property name="label" translatable="yes">Channel: z-dir wall-normal</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
@@ -6137,7 +6128,8 @@ w = 0.0</property>
                                         <property name="yalign">0.4699999988079071</property>
                                         <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <property name="group">radiobutton11</property>
+                                        <property name="group">geom_rb_channel_x</property>
+                                        <signal name="toggled" handler="on_clicked_rb_distanceField" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -8260,60 +8252,6 @@ w = 0.0</property>
                                 <property name="can_focus">False</property>
                                 <property name="orientation">vertical</property>
                                 <child>
-                                  <object class="GtkGrid" id="grid53">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="margin_left">20</property>
-                                    <child>
-                                      <object class="GtkCheckButton" id="checkbutton23">
-                                        <property name="label" translatable="yes">Velocity</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">False</property>
-                                        <property name="xalign">0</property>
-                                        <property name="draw_indicator">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="left_attach">0</property>
-                                        <property name="top_attach">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkCheckButton" id="checkbutton24">
-                                        <property name="label" translatable="yes">Pressure</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">False</property>
-                                        <property name="xalign">0</property>
-                                        <property name="draw_indicator">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="left_attach">0</property>
-                                        <property name="top_attach">1</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkCheckButton" id="checkbutton25">
-                                        <property name="label" translatable="yes">Temperature</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">False</property>
-                                        <property name="xalign">0</property>
-                                        <property name="draw_indicator">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="left_attach">0</property>
-                                        <property name="top_attach">2</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <object class="GtkGrid" id="grid51">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
@@ -8373,6 +8311,7 @@ w = 0.0</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="halign">start</property>
+                                        <property name="filter">CSVFileFilter</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -8381,6 +8320,66 @@ w = 0.0</property>
                                     </child>
                                     <child>
                                       <placeholder/>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkGrid" id="grid53">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="margin_left">20</property>
+                                    <child>
+                                      <object class="GtkCheckButton" id="checkbutton23">
+                                        <property name="label" translatable="yes">Velocity</property>
+                                        <property name="visible">True</property>
+                                        <property name="sensitive">False</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="xalign">0</property>
+                                        <property name="active">True</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">0</property>
+                                        <property name="top_attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="checkbutton24">
+                                        <property name="label" translatable="yes">Pressure</property>
+                                        <property name="visible">True</property>
+                                        <property name="sensitive">False</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="xalign">0</property>
+                                        <property name="active">True</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">0</property>
+                                        <property name="top_attach">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkCheckButton" id="checkbutton25">
+                                        <property name="label" translatable="yes">Temperature</property>
+                                        <property name="visible">True</property>
+                                        <property name="sensitive">False</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">False</property>
+                                        <property name="xalign">0</property>
+                                        <property name="active">True</property>
+                                        <property name="draw_indicator">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">0</property>
+                                        <property name="top_attach">2</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
@@ -8424,9 +8423,11 @@ w = 0.0</property>
                                     <child>
                                       <object class="GtkCheckButton" id="so_cb_formatOutput_physicalTime1">
                                         <property name="visible">True</property>
+                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="xalign">0</property>
+                                        <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
                                         <child>
                                           <object class="GtkLabel" id="txtLabel127">
@@ -8455,6 +8456,7 @@ w = 0.0</property>
                                     <child>
                                       <object class="GtkCheckButton" id="so_cb_formatOutput_timeStep1">
                                         <property name="visible">True</property>
+                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="xalign">0</property>
@@ -8526,6 +8528,7 @@ w = 0.0</property>
                                         <property name="valign">center</property>
                                         <property name="margin_bottom">3</property>
                                         <property name="width_chars">6</property>
+                                        <property name="text" translatable="yes">0</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
                                       </object>
@@ -8535,9 +8538,8 @@ w = 0.0</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkEntry" id="so_text_formatOutput_physicalTime_interval3">
+                                      <object class="GtkEntry" id="so_text_physicalTime_interval">
                                         <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
                                         <property name="can_focus">True</property>
                                         <property name="halign">start</property>
                                         <property name="valign">center</property>
@@ -8545,6 +8547,7 @@ w = 0.0</property>
                                         <property name="width_chars">6</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
+                                        <signal name="focus-out-event" handler="is_float_positive" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">2</property>
@@ -9183,23 +9186,6 @@ w = 0.0</property>
             <property name="expand">True</property>
             <property name="fill">True</property>
             <property name="position">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkStatusbar" id="statusbar1">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
-            <property name="margin_top">6</property>
-            <property name="margin_bottom">6</property>
-            <property name="orientation">vertical</property>
-            <property name="spacing">2</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">2</property>
           </packing>
         </child>
       </object>

@@ -6,7 +6,7 @@ try:
     import gi
 
     gi.require_version('Gtk', '3.0')
-    from gi.repository import Gtk
+    from gi.repository import Gtk, GObject
     from gi.repository import Gdk
 except Exception as e:
     log(e, 'e')
@@ -14,28 +14,36 @@ except Exception as e:
 
 
 class GIN3DConfigWin:
-    GLADEFILE = '../GIN3D_ConfigGUI.glade'
-    CONFGFILE = 'GIN3D_DefaultConfig.cfg'
+    GLADEFILE = resource_path('GIN3D_ConfigGUI.glade')
 
     def __init__(self, cfg=None):
 
-        self.cnfg = self.parse_file(cfg)
+        if cfg is not None:
+            try:
+                self.cnfg = self.parse_file(cfg)
+            except FileNotFoundError as err:
+                log(err, 'e')
+                return
 
         self.builder = Gtk.Builder()
         self.builder.add_from_file(self.GLADEFILE)
         self.builder.connect_signals(Handler(self.builder))
+        win = self.builder.get_object('MainWindow')
 
-        self.apply_cfg()
+        if cfg is not None:
+            self.apply_cfg()
+            win.set_title(win.get_title() + ' - ' + cfg[cfg.rfind('/')+1:])
 
-        self.builder.get_object('MainWindow').show()
+        win.show()
+
         Gtk.main()
 
     def parse_file(self, filename):
 
         if filename is None:
-            filename = self.CONFGFILE
+            return {}
 
-        line_number = 0;
+        line_number = 0
         cnfg = {}
         with open(filename, "r") as fp:
             for line in fp:
@@ -44,9 +52,9 @@ class GIN3DConfigWin:
                 if l.startswith('#<Same as Inlet Profile>'):
                     cnfg['IC_InletProfile'] = 'True'
                 elif l.startswith('#<TrackCoordFile>'):
-                    cnfg['TrackCoordFile'] = l.replace('#<TrackCoordFile>').strip()
+                    cnfg['TrackCoordFile'] = l.replace('#<TrackCoordFile>','').strip()
                 elif l.startswith('#<IBFiles>'):
-                    cnfg['IBFiles'] = l.replace('#<IBFiles>').strip()
+                    cnfg['IBFiles'] = l.replace('#<IBFiles>','').strip()
                 elif not (l.startswith('#') or '' == l):
                     split = l.split(' ', 1)
                     key = split[0]
@@ -80,8 +88,6 @@ class GIN3DConfigWin:
                         continue
                     else:
                         cnfg[key] = val
-                        # else:
-                        #   raise FileExistsError('Line No.: %d - %s' %(lineNo, line))
         return cnfg
 
     def cfgVal(self, key):
@@ -560,14 +566,11 @@ class GIN3DConfigWin:
 
             # Sampling
             # Read the coordinate file (*.csv)
-            try:
-                self.setVal('so_file_coordFile', self.cnfg['TrackCoordFile'])
-            except:
-                pass
+            self.setVal('so_file_coordFile', self.cfgVal('TrackCoordFile'))
 
             # Sampling Frequency
             # Physical Time - Interval
-            self.setVal('so_text_physicalTime_interval', self.cnfg['TrackInterval'])
+            self.setVal('so_text_physicalTime_interval', self.cfgVal('TrackInterval'))
 
             # Collect Statistics
             try:
@@ -677,7 +680,7 @@ class GIN3DConfigWin:
                         self.setVal('temp_text_gravity_x', gravity[0])
                         self.setVal('temp_text_gravity_y', gravity[1])
                         self.setVal('temp_text_gravity_z', gravity[2])
-                    except:
+                    except Exception as err:
                         log(err, 'e')
 
                 # Source magnitude
@@ -727,8 +730,6 @@ class GIN3DConfigWin:
         # -------- Geometry Parameters ----
         try:
             if solid_geometry:
-
-
 
                 # IB Reconstruction Scheme
                 ibReconstruction = self.cfgVal('IBReconstruction')

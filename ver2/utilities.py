@@ -1,9 +1,10 @@
 import gi
-from gi.repository import Gtk
+import os
+import traceback
 
+from gi.repository import Gtk
 gi.require_version('Gtk', '3.0')
 
-import traceback
 
 def log(msg, mtype='e'):
     message_type = 'INFO' if mtype == 'i' else 'DEBUG' if mtype == 'd' else 'ERROR'
@@ -21,6 +22,9 @@ def display(msg, mtype, win):
         dialog.destroy()
 
 
+def resource_path(relative):
+    return os.path.join(os.environ.get("_MEIPASS2", os.path.abspath(".")),relative)
+	
 def file_saveas(win, filters=None):
     dialog = Gtk.FileChooserDialog('Save As...', win, Gtk.FileChooserAction.SAVE,
                                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,

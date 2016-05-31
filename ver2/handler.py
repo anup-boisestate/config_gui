@@ -1,4 +1,3 @@
-from utilities import *
 from writer import *
 import re
 import gi
@@ -20,6 +19,10 @@ class FileMenuHandler:
     def on_filemenu_quit_activate(*args):
         log('GIN3D config window closing...', 'd')
         Gtk.main_quit(*args)
+
+    def on_filemenu_new_activate(self, obj, data=None):
+        from GIN3DConfigWin import GIN3DConfigWin
+        GIN3DConfigWin()
 
     def on_filemenu_open_activate(self, obj, data=None):
         filters = {'Gin3D Config': '*.cfg'}
